@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevType Pro | Tokyo Night</title>
+
+    <!-- Core Libraries -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styling -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Syntax Highlighting (Tokyo Night) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        /* --- Tokyo Night Color Variables --- */
+        :root {
+            --bg-dark: #1a1b26;       /* Main Background */
+            --bg-darker: #16161e;     /* Header/Bars */
+            --bg-darkest: #13141a;    /* Page Background */
+            --text-main: #c0caf5;     /* Default Text */
+            --text-dim: #565f89;      /* Comments/Dimmed */
+            --accent-blue: #7aa2f7;   /* Keywords/Functions */
+            --accent-cyan: #7dcfff;   /* Regex/Escape */
+            --accent-green: #9ece6a;  /* Strings */
+            --accent-yellow: #e0af68; /* Numbers */
+            --accent-magenta: #bb9af7;/* Variables */
+            --error-red: #f7768e;     /* Errors */
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-darkest);
+            overflow: hidden; 
+        }
+        
+        .font-code { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 10px; }
+        
+        /* --- KEY FIX: CURSOR & CHAR STATES --- */
+        
+        /* Cursor Block Styling */
+        .cursor-block {
+            background-color: var(--accent-blue);
+            color: var(--bg-dark) !important;
+            box-shadow: 0 0 15px rgba(122, 162, 247, 0.4);
+            border-radius: 2px;
+            z-index: 10;
+            transition: transform 0.05s ease;
+        }
+
+        /* 1. WAITING: Dim opacity to show it's not typed, but KEEP syntax color */
+        .char-waiting { 
+            opacity: 0.35; 
+            transition: opacity 0.1s;
+        }
+
+        /* 2. CORRECT: Full opacity, KEEP syntax color from Highlight.js */
+        .char-correct { 
+            opacity: 1; 
+            text-shadow: 0 0 1px rgba(255, 255, 255, 0.1); 
+        }
+
+        /* 3. INCORRECT: Force Red color for errors (overrides syntax) */
+        .char-incorrect { 
+            color: var(--error-red) !important; 
+            background-color: rgba(247, 118, 142, 0.15);
+            border-radius: 2px;
+            opacity: 1;
+        }
+
+        /* 4. AUTO-INDENT: Very dim */
+        .char-auto { 
+            opacity: 0.15; 
+        }
+
+        /* Error Shake Animation */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+        .screen-shake { animation: shake 0.2s ease-in-out; }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(22, 22, 30, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-[#13141a]">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- DATA ---
+        const REPO_DATA = {
+            js: { name: 'JavaScript', icon: 'fa-js', color: 'text-yellow-400', code: `const debounce = (fn, delay) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+};
+
+// Usage example
+const log = debounce(console.log, 300);
+log('Hello'); // Cancelled
+log('World'); // Executed` },
+            py: { name: 'Python', icon: 'fa-python', color: 'text-blue-400', code: `class NeuralNetwork:
+    def __init__(self, x, y):
+        self.input = x
+        self.weights1 = np.random.rand(self.input.shape[1], 4) 
+        self.weights2 = np.random.rand(4, 1)                 
+        self.y = y
+        self.output = np.zeros(self.y.shape)
+
+    def feedforward(self):
+        self.layer1 = sigmoid(np.dot(self.input, self.weights1))
+        return self.layer1` },
+            cpp: { name: 'C++', icon: 'fa-c', color: 'text-blue-600', code: `template <typename T>
+class Matrix {
+private:
+    std::vector<std::vector<T>> mat;
+    unsigned rows;
+    unsigned cols;
+
+public:
+    Matrix(unsigned _rows, unsigned _cols, const T& _initial);
+    Matrix<T>& operator=(const Matrix<T>& rhs);
+    
+    // Matrix Addition
+    Matrix<T> operator+(const Matrix<T>& rhs) {
+        Matrix result(rows, cols, 0.0);
+        for (unsigned i=0; i<rows; i++) {
+            for (unsigned j=0; j<cols; j++) {
+                result[i][j] = this->mat[i][j] + rhs(i,j);
+            }
+        }
+        return result;
+    }
+};` }
+        };
+
+        // --- HELPER: PARSER ---
+        const parseCodeToChars = (codeString, lang) => {
+            // Use highlight.js to parse
+            const hlResult = lang === 'auto' ? hljs.highlightAuto(codeString) : hljs.highlight(codeString, { language: lang });
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = hlResult.value;
+
+            let chars = [];
+            // Traverse the HTML nodes generated by HLJS
+            const traverse = (node, inheritedClass) => {
+                if (node.nodeType === 3) { // Text node
+                    for (let char of node.nodeValue) {
+                        // Push char with the class inherited from parent spans (e.g. "hljs-keyword")
+                        chars.push({ char, className: inheritedClass || '', status: 'waiting', typed: null });
+                    }
+                } else if (node.nodeType === 1) { // Element node
+                    // Concatenate classes if needed
+                    const newClass = inheritedClass ? `${inheritedClass} ${node.className}` : node.className;
+                    node.childNodes.forEach(child => traverse(child, newClass));
+                }
+            };
+            tempDiv.childNodes.forEach(child => traverse(child, null));
+
+            // Indent logic
+            let isStartOfLine = true;
+            chars.forEach(c => {
+                if (c.char === '\n') { isStartOfLine = true; return; }
+                if (isStartOfLine) {
+                    if (c.char === ' ' || c.char === '\t') c.isIndent = true;
+                    else isStartOfLine = false;
+                }
+            });
+            return { chars, detectedLang: hlResult.language };
+        };
+
+        // --- COMPONENT: GRADE HELPER ---
+        const getGrade = (wpm, acc) => {
+            if (wpm > 80 && acc > 98) return { label: 'S', color: 'text-yellow-400', desc: 'Legendary' };
+            if (wpm > 60 && acc > 95) return { label: 'A', color: 'text-green-400', desc: 'Professional' };
+            if (wpm > 40 && acc > 90) return { label: 'B', color: 'text-blue-400', desc: 'Competent' };
+            if (wpm > 20 && acc > 80) return { label: 'C', color: 'text-orange-400', desc: 'Novice' };
+            return { label: 'D', color: 'text-red-400', desc: 'Needs Practice' };
+        };
+
+        // --- COMPONENT: HOME ---
+        const HomePage = ({ onStartGame }) => {
+            const [customCode, setCustomCode] = useState('');
+            const [selectedLang, setSelectedLang] = useState('js');
+
+            return (
+                <div className="min-h-screen bg-[#13141a] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                    {/* Background Decor */}
+                    <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+                    <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
+
+                    <div className="max-w-6xl w-full space-y-8 relative z-10">
+                        <div className="text-center mb-12">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-[10px] font-mono text-gray-400 mb-4 border border-white/10">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                SYSTEM ONLINE
+                            </div>
+                            <h1 className="text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-3">
+                                DEV<span className="text-[#7aa2f7]">TYPE</span>
+                            </h1>
+                            <p className="text-gray-500 font-mono text-sm tracking-widest uppercase">Master Your Coding Speed</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Panel Izquierdo: Predefinidos */}
+                            <div className="glass-card rounded-2xl p-6 transform transition-all hover:-translate-y-1 duration-300">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold">Stack Library</h2>
+                                    <i className="fa-solid fa-layer-group text-[#7aa2f7]"></i>
+                                </div>
+                                
+                                <div className="flex gap-2 mb-6">
+                                    {Object.entries(REPO_DATA).map(([key, data]) => (
+                                        <button key={key} onClick={() => setSelectedLang(key)}
+                                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 border ${selectedLang === key ? 'bg-white/10 border-[#7aa2f7] text-white shadow-lg' : 'bg-white/5 border-transparent text-gray-500 hover:bg-white/10'}`}>
+                                            <i className={`fa-brands ${data.icon} ${data.color}`}></i> {data.name}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="bg-[#1a1b26] rounded-xl h-52 overflow-hidden border border-white/5 shadow-inner relative">
+                                    <div className="absolute top-0 left-0 right-0 h-8 bg-[#16161e] flex items-center px-4 gap-2 border-b border-white/5">
+                                        <span className="w-3 h-3 rounded-full bg-[#f7768e]/50"></span>
+                                        <span className="w-3 h-3 rounded-full bg-[#e0af68]/50"></span>
+                                        <span className="w-3 h-3 rounded-full bg-[#9ece6a]/50"></span>
+                                        <span className="text-[10px] text-gray-500 ml-2 font-mono">index.{selectedLang}</span>
+                                    </div>
+                                    <pre className="p-4 pt-12 text-xs font-code text-gray-400 overflow-auto h-full"><code>{REPO_DATA[selectedLang].code}</code></pre>
+                                </div>
+
+                                <button className="btn w-full mt-6 bg-[#7aa2f7] hover:bg-[#7aa2f7]/80 text-[#1a1b26] border-none font-bold py-3 shadow-lg shadow-[#7aa2f7]/20" onClick={() => onStartGame(REPO_DATA[selectedLang].code, selectedLang)}>
+                                    <i className="fa-solid fa-bolt mr-2"></i> Initialize Session
+                                </button>
+                            </div>
+
+                            {/* Panel Derecho: Custom */}
+                            <div className="glass-card rounded-2xl p-6 transform transition-all hover:-translate-y-1 duration-300">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold">Custom Buffer</h2>
+                                    <i className="fa-solid fa-terminal text-[#7aa2f7]"></i>
+                                </div>
+                                
+                                <div className="bg-[#1a1b26] rounded-xl h-64 relative border border-white/5">
+                                     <div className="absolute top-0 left-0 right-0 h-8 bg-[#16161e] flex items-center px-4 border-b border-white/5 text-[10px] text-gray-500 font-mono">
+                                        buffer.input
+                                    </div>
+                                    <textarea 
+                                        className="w-full h-full bg-transparent p-4 pt-10 font-code text-xs text-gray-300 resize-none focus:outline-none focus:ring-0"
+                                        placeholder="// Paste your own code snippet here..."
+                                        value={customCode}
+                                        onChange={(e) => setCustomCode(e.target.value)}
+                                        spellCheck="false"
+                                    ></textarea>
+                                </div>
+
+                                <button className="btn w-full mt-6 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold py-3" disabled={!customCode.trim()} onClick={() => onStartGame(customCode, 'auto')}>
+                                    <i className="fa-solid fa-wand-magic-sparkles mr-2 text-[#7aa2f7]"></i> Analyze & Run
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENT: WORKSPACE ---
+        const TypingExercise = ({ code, initialLang, onBack }) => {
+            const [chars, setChars] = useState([]);
+            const [cursor, setCursor] = useState(0);
+            const [stats, setStats] = useState({ wpm: 0, acc: 100, time: 0, errors: 0, started: false });
+            const [isFinished, setIsFinished] = useState(false);
+            const [langName, setLangName] = useState(initialLang);
+            const [shake, setShake] = useState(false);
+            
+            const startTimeRef = useRef(null);
+            const timerRef = useRef(null);
+            const inputRef = useRef(null);
+            const scrollRef = useRef(null);
+            const containerRef = useRef(null);
+
+            const lines = useMemo(() => code.split('\n').length, [code]);
+
+            useEffect(() => {
+                const { chars: pChars, detectedLang } = parseCodeToChars(code, initialLang);
+                setChars(pChars);
+                if(initialLang === 'auto') setLangName(detectedLang || 'Plain Text');
+                if(inputRef.current) inputRef.current.focus();
+            }, []);
+
+            useEffect(() => {
+                if (stats.started && !isFinished) {
+                    timerRef.current = setInterval(() => {
+                        const now = Date.now();
+                        const mins = (now - startTimeRef.current) / 60000;
+                        const correctChars = chars.filter(c => c.status === 'correct').length;
+                        const wpm = mins > 0 ? Math.round((correctChars / 5) / mins) : 0;
+                        setStats(prev => ({ ...prev, time: Math.floor((now - startTimeRef.current)/1000), wpm }));
+                    }, 1000);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [stats.started, isFinished, chars]);
+
+            useEffect(() => {
+                const cursorEl = document.getElementById('cursor-el');
+                if (cursorEl && scrollRef.current && containerRef.current) {
+                    const containerHeight = containerRef.current.clientHeight;
+                    const offset = cursorEl.offsetTop;
+                    const currentScroll = parseFloat(scrollRef.current.style.transform.replace(/[^-\d.]/g, '') || 0);
+                    
+                    if (offset + currentScroll > containerHeight / 2) {
+                        const newScroll = (containerHeight / 2) - offset;
+                        scrollRef.current.style.transform = `translateY(${newScroll}px)`;
+                    } else if (offset < 100) {
+                         scrollRef.current.style.transform = `translateY(0px)`;
+                    }
+                }
+            }, [cursor]);
+
+            const triggerShake = () => {
+                setShake(true);
+                setTimeout(() => setShake(false), 200);
+            };
+
+            const finishGame = () => {
+                if (isFinished) return;
+                clearInterval(timerRef.current);
+                setIsFinished(true);
+
+                const now = Date.now();
+                const totalTimeMs = (startTimeRef.current) ? (now - startTimeRef.current) : 0;
+                const mins = totalTimeMs / 60000;
+                const attempted = cursor; 
+                const correct = chars.slice(0, cursor).filter(c => c.status === 'correct').length;
+                
+                const finalWpm = mins > 0 ? Math.round((correct / 5) / mins) : 0;
+                const finalAcc = attempted > 0 ? Math.round(((attempted - stats.errors) / attempted) * 100) : 0;
+
+                setStats(prev => ({ 
+                    ...prev, 
+                    wpm: finalWpm, 
+                    acc: Math.max(0, finalAcc),
+                    time: Math.floor(totalTimeMs/1000) 
+                }));
+            };
+
+            const handleKeyDown = (e) => {
+                if (isFinished) return;
+
+                if (e.key === 'Escape') {
+                    finishGame();
+                    return;
+                }
+
+                if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+                
+                inputRef.current.focus();
+
+                if (!stats.started) {
+                    setStats(prev => ({ ...prev, started: true }));
+                    startTimeRef.current = Date.now();
+                }
+
+                if (e.key === 'Backspace') {
+                    if (cursor > 0) {
+                        let newCur = cursor - 1;
+                        let newChars = [...chars];
+                        while (newCur > 0 && newChars[newCur].status === 'auto') {
+                            newChars[newCur].status = 'waiting';
+                            newCur--;
+                        }
+                        newChars[newCur].status = 'waiting';
+                        newChars[newCur].typed = null;
+                        setChars(newChars);
+                        setCursor(newCur);
+                    }
+                    return;
+                }
+
+                const char = e.key === 'Enter' ? '\n' : e.key;
+                if(char.length > 1) return;
+
+                let newChars = [...chars];
+                let newStats = { ...stats };
+                let newCur = cursor;
+                const target = chars[cursor];
+
+                if (char === target.char) {
+                    newChars[cursor].status = 'correct';
+                    newChars[cursor].typed = char;
+                    newCur++;
+                    if (char === '\n') {
+                        while (newCur < newChars.length && newChars[newCur].isIndent) {
+                            newChars[newCur].status = 'auto';
+                            newCur++;
+                        }
+                    }
+                } else {
+                    newChars[cursor].status = 'incorrect';
+                    newChars[cursor].typed = char;
+                    newCur++;
+                    newStats.errors += 1;
+                    triggerShake();
+                }
+
+                const attempted = newCur;
+                const acc = attempted > 0 ? Math.round(((attempted - newStats.errors) / attempted) * 100) : 100;
+                newStats.acc = Math.max(0, acc);
+
+                setChars(newChars);
+                setCursor(newCur);
+                setStats(newStats);
+
+                if (newCur >= chars.length) finishGame();
+            };
+
+            const progress = chars.length > 0 ? Math.round((cursor / chars.length) * 100) : 0;
+            const grade = getGrade(stats.wpm, stats.acc);
+
+            return (
+                <div className={`h-screen flex flex-col bg-[#13141a] text-[#c0caf5] ${shake ? 'screen-shake' : ''}`} onClick={() => inputRef.current?.focus()}>
+                    
+                    {/* Top Bar */}
+                    <div className="h-12 bg-[#16161e] border-b border-white/5 flex items-center justify-between px-6 z-20">
+                        <div className="flex items-center gap-4">
+                            <button onClick={onBack} className="btn btn-ghost btn-xs text-xs opacity-50 hover:opacity-100 text-gray-400">
+                                <i className="fa-solid fa-arrow-left mr-2"></i> Exit
+                            </button>
+                            <div className="h-4 w-px bg-white/10"></div>
+                            <span className="font-mono text-xs font-bold text-white bg-white/10 px-2 py-1 rounded tracking-wide">{langName.toUpperCase()}</span>
+                        </div>
+                        
+                        <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-6">
+                            <div className="text-center w-16">
+                                <div className="text-[9px] text-gray-500 uppercase font-bold">WPM</div>
+                                <div className="text-lg font-black text-white leading-none">{stats.wpm}</div>
+                            </div>
+                            <div className="text-center w-16">
+                                <div className="text-[9px] text-gray-500 uppercase font-bold">ACC</div>
+                                <div className="text-lg font-black text-white leading-none">{stats.acc}%</div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <div className="font-mono text-xs text-gray-500">{Math.floor(stats.time/60)}:{(stats.time%60).toString().padStart(2,'0')}</div>
+                            <button onClick={finishGame} className="btn btn-ghost btn-xs text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20">
+                                <i className="fa-solid fa-flag-checkered mr-1"></i> Finish
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="h-0.5 bg-white/5 w-full">
+                        <div className="h-full bg-[#7aa2f7] shadow-[0_0_10px_#7aa2f7]" style={{ width: `${progress}%` }}></div>
+                    </div>
+
+                    {/* Editor Container */}
+                    <div ref={containerRef} className="flex-1 relative overflow-hidden cursor-text">
+                        
+                        {/* Line Numbers Gutter */}
+                        <div className="absolute left-0 top-0 bottom-0 w-16 bg-[#16161e]/50 border-r border-white/5 z-0 overflow-hidden pointer-events-none">
+                            <div className="p-4 pt-0 text-right font-code text-xs leading-loose text-gray-600" style={{ transform: scrollRef.current?.style.transform || 'translateY(0px)' }}>
+                                {Array.from({ length: lines }, (_, i) => (
+                                    <div key={i} className="h-[28px]">{i + 1}</div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Code Area */}
+                        <div ref={scrollRef} className="code-scroll-container absolute top-0 left-0 right-0 pl-20 pr-20 pt-8 font-code text-base leading-loose whitespace-pre-wrap break-all transition-transform duration-100">
+                            {chars.map((c, i) => {
+                                let st = 'char-waiting';
+                                if(c.status === 'correct') st = 'char-correct';
+                                if(c.status === 'incorrect') st = 'char-incorrect';
+                                if(c.status === 'auto') st = 'char-auto';
+                                
+                                // Apply HLJS class only if correct or waiting (to keep colors)
+                                const syntaxClass = (c.status === 'waiting' || c.status === 'correct') ? c.className : '';
+                                
+                                return (
+                                    <span key={i} id={i === cursor ? 'cursor-el' : undefined}
+                                        className={`${st} ${syntaxClass} ${i === cursor ? 'cursor-block' : ''} transition-colors duration-100`}>
+                                        {(c.status === 'incorrect' && c.typed) ? (c.typed === '\n' ? '↵' : c.typed) : c.char}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <input ref={inputRef} type="text" className="opacity-0 absolute top-[-9999px]" autoFocus onKeyDown={handleKeyDown} autoComplete="off"/>
+
+                    {/* Results Modal */}
+                    {isFinished && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+                            <div className="bg-[#16161e] border border-white/10 p-10 rounded-3xl max-w-md w-full shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-transparent blur-2xl"></div>
+                                
+                                <div className="text-center mb-8 relative z-10">
+                                    <div className={`text-6xl font-black ${grade.color} mb-2`}>{grade.label}</div>
+                                    <h2 className="text-xl font-bold text-white">{grade.desc}</h2>
+                                    <p className="text-gray-500 text-xs mt-2 font-mono">SESSION COMPLETE</p>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-4 mb-8 relative z-10">
+                                    <div className="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                                        <div className="text-xs text-gray-500 uppercase font-bold mb-1">WPM</div>
+                                        <div className="text-2xl font-black text-white">{stats.wpm}</div>
+                                    </div>
+                                    <div className="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                                        <div className="text-xs text-gray-500 uppercase font-bold mb-1">Accuracy</div>
+                                        <div className="text-2xl font-black text-white">{stats.acc}%</div>
+                                    </div>
+                                    <div className="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                                        <div className="text-xs text-gray-500 uppercase font-bold mb-1">Errors</div>
+                                        <div className="text-2xl font-black text-red-400">{stats.errors}</div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 relative z-10">
+                                    <button onClick={onBack} className="btn btn-ghost flex-1 text-gray-400 hover:text-white border border-white/10">
+                                        <i className="fa-solid fa-home mr-2"></i> Home
+                                    </button>
+                                    <button onClick={() => window.location.reload()} className="btn btn-primary flex-1 bg-[#7aa2f7] border-none text-[#1a1b26] hover:opacity-90">
+                                        <i className="fa-solid fa-rotate-right mr-2"></i> Retry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState('home');
+            const [config, setConfig] = useState({});
+            return (
+                <div className="text-base-content antialiased">
+                    {view === 'home' 
+                        ? <HomePage onStartGame={(code, lang) => { setConfig({ code, lang }); setView('game'); }} /> 
+                        : <TypingExercise code={config.code} initialLang={config.lang} onBack={() => setView('home')} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
