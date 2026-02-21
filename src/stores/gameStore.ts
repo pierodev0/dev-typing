@@ -33,6 +33,7 @@ const initialStats: GameStats = {
 
 const defaultOptions: GameOptions = {
   stopOnError: false,
+  timeLimit: null,
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({

@@ -17,7 +17,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
   const { chars, cursor, isFinished, langName, resetGame, finishGame } = useGameStore();
   const { handleKeyDown, inputRef, shake, focusInput } = useTyping();
   const { scrollRef, containerRef } = useAutoScroll();
-  const { time, wpm } = useTimer();
+  const { time, wpm, timeRemaining } = useTimer();
   
   const stats = useGameStore((state) => state.stats);
 
@@ -46,6 +46,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
         time={time}
         wpm={wpm}
         acc={stats.acc}
+        timeRemaining={timeRemaining}
         onBack={onBack}
         onFinish={finishGame}
       />

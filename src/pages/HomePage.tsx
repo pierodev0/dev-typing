@@ -6,6 +6,14 @@ import { LanguageSelector } from '@/components/home/LanguageSelector';
 import { REPO_DATA } from '@/data/codeSnippets';
 import type { GameOptions } from '@/types';
 
+const TIME_OPTIONS = [
+  { label: 'None', value: null },
+  { label: '30s', value: 30 },
+  { label: '1m', value: 60 },
+  { label: '2m', value: 120 },
+  { label: '5m', value: 300 },
+];
+
 interface HomePageProps {
   onStartGame: (code: string, lang: string, options: GameOptions) => void;
 }
@@ -14,6 +22,7 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
   const [selectedLang, setSelectedLang] = useState('js');
   const [options, setOptions] = useState<GameOptions>({
     stopOnError: false,
+    timeLimit: null,
   });
 
   const handleCustomCode = (code: string) => {
@@ -26,6 +35,10 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
 
   const toggleStopOnError = () => {
     setOptions(prev => ({ ...prev, stopOnError: !prev.stopOnError }));
+  };
+
+  const setTimeLimit = (value: number | null) => {
+    setOptions(prev => ({ ...prev, timeLimit: value }));
   };
 
   return (
@@ -73,10 +86,25 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
                 />
                 <span className="text-xs text-gray-400">Stop on error</span>
               </label>
-              <span className="text-[10px] text-gray-600">|</span>
-              <span className="text-[10px] text-gray-600">
-                {options.stopOnError ? 'Must correct errors to continue' : 'Errors allow progression'}
-              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="text-xs text-gray-400">Time limit:</span>
+              <div className="flex gap-1">
+                {TIME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => setTimeLimit(opt.value)}
+                    className={`px-2 py-1 text-[10px] rounded transition-all ${
+                      options.timeLimit === opt.value
+                        ? 'bg-tokyo-blue text-tokyo-bg font-bold'
+                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button
@@ -93,7 +121,7 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
               <i className="fa-solid fa-terminal text-tokyo-blue"></i>
             </div>
 
-            <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="flex items-center gap-3 mb-2 px-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -103,6 +131,25 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
                 />
                 <span className="text-xs text-gray-400">Stop on error</span>
               </label>
+            </div>
+
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <span className="text-xs text-gray-400">Time limit:</span>
+              <div className="flex gap-1">
+                {TIME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => setTimeLimit(opt.value)}
+                    className={`px-2 py-1 text-[10px] rounded transition-all ${
+                      options.timeLimit === opt.value
+                        ? 'bg-tokyo-blue text-tokyo-bg font-bold'
+                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <CustomBuffer onSubmit={handleCustomCode} />

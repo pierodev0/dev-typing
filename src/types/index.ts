@@ -40,6 +40,7 @@ export interface CodeSnippet {
 
 export interface GameOptions {
   stopOnError: boolean;
+  timeLimit: number | null;
 }
 
 export type SnippetsMap = Record<string, CodeSnippet>;

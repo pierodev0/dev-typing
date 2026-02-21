@@ -3,16 +3,19 @@ interface TopBarProps {
   time: number;
   wpm: number;
   acc: number;
+  timeRemaining?: number | null;
   onBack: () => void;
   onFinish: () => void;
 }
 
-export const TopBar = ({ langName, time, wpm, acc, onBack, onFinish }: TopBarProps) => {
+export const TopBar = ({ langName, time, wpm, acc, timeRemaining, onBack, onFinish }: TopBarProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const isLowTime = timeRemaining !== null && timeRemaining !== undefined && timeRemaining <= 10 && timeRemaining > 0;
 
   return (
     <div className="h-12 bg-tokyo-bg-dark border-b border-white/5 flex items-center justify-between px-6 z-20">
@@ -41,7 +44,14 @@ export const TopBar = ({ langName, time, wpm, acc, onBack, onFinish }: TopBarPro
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="font-mono text-xs text-gray-500">{formatTime(time)}</div>
+        {timeRemaining !== null && timeRemaining !== undefined ? (
+          <div className={`font-mono text-xs font-bold ${isLowTime ? 'text-red-400 animate-pulse' : 'text-tokyo-yellow'}`}>
+            <i className="fa-solid fa-clock mr-1"></i>
+            {formatTime(timeRemaining)}
+          </div>
+        ) : (
+          <div className="font-mono text-xs text-gray-500">{formatTime(time)}</div>
+        )}
         <button 
           onClick={onFinish} 
           className="btn btn-ghost btn-xs text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"

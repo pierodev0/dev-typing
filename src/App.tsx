@@ -16,7 +16,7 @@ export const App = () => {
   const [config, setConfig] = useState<GameConfig>({ 
     code: '', 
     lang: '', 
-    options: { stopOnError: false } 
+    options: { stopOnError: false, timeLimit: null } 
   });
 
   const handleStartGame = (code: string, lang: string, options: GameOptions) => {
