@@ -290,7 +290,7 @@ public:
         };
 
         // --- COMPONENT: WORKSPACE ---
-        const TypingExercise = ({ code, initialLang, onBack }) => {
+        const TypingExercise = ({ code, initialLang, onBack, onRetry }) => {
             const [chars, setChars] = useState([]);
             const [cursor, setCursor] = useState(0);
             const [stats, setStats] = useState({ wpm: 0, acc: 100, time: 0, errors: 0, started: false });
@@ -311,7 +311,7 @@ public:
                 setChars(pChars);
                 if(initialLang === 'auto') setLangName(detectedLang || 'Plain Text');
                 if(inputRef.current) inputRef.current.focus();
-            }, []);
+            }, [code, initialLang]);
 
             useEffect(() => {
                 if (stats.started && !isFinished) {
@@ -442,6 +442,17 @@ public:
             const progress = chars.length > 0 ? Math.round((cursor / chars.length) * 100) : 0;
             const grade = getGrade(stats.wpm, stats.acc);
 
+            const handleRetry = () => {
+                const { chars: pChars } = parseCodeToChars(code, initialLang);
+                setChars(pChars);
+                setCursor(0);
+                setStats({ wpm: 0, acc: 100, time: 0, errors: 0, started: false });
+                setIsFinished(false);
+                clearInterval(timerRef.current);
+                startTimeRef.current = null;
+                if (inputRef.current) inputRef.current.focus();
+            };
+
             return (
                 <div className={`h-screen flex flex-col bg-[#13141a] text-[#c0caf5] ${shake ? 'screen-shake' : ''}`} onClick={() => inputRef.current?.focus()}>
                     
@@ -545,7 +556,7 @@ public:
                                     <button onClick={onBack} className="btn btn-ghost flex-1 text-gray-400 hover:text-white border border-white/10">
                                         <i className="fa-solid fa-home mr-2"></i> Home
                                     </button>
-                                    <button onClick={() => window.location.reload()} className="btn btn-primary flex-1 bg-[#7aa2f7] border-none text-[#1a1b26] hover:opacity-90">
+                                    <button onClick={handleRetry} className="btn btn-primary flex-1 bg-[#7aa2f7] border-none text-[#1a1b26] hover:opacity-90">
                                         <i className="fa-solid fa-rotate-right mr-2"></i> Retry
                                     </button>
                                 </div>
@@ -563,7 +574,7 @@ public:
                 <div className="text-base-content antialiased">
                     {view === 'home' 
                         ? <HomePage onStartGame={(code, lang) => { setConfig({ code, lang }); setView('game'); }} /> 
-                        : <TypingExercise code={config.code} initialLang={config.lang} onBack={() => setView('home')} />}
+                        : <TypingExercise code={config.code} initialLang={config.lang} onBack={() => setView('home')} onRetry={() => {}} />}
                 </div>
             );
         };
