@@ -18,10 +18,20 @@
   --error-red: #f7768e;
 }
 
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-darkest);
-  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
 }
 
 .font-code {
@@ -88,4 +98,24 @@ body {
   background: rgba(22, 22, 30, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .cursor-block {
+    box-shadow: 0 0 10px rgba(122, 162, 247, 0.3);
+  }
+  
+  .glass-card {
+    backdrop-filter: blur(8px);
+  }
+  
+  .code-scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hover\:-translate-y-1:hover {
+    transform: none;
+  }
 }

@@ -3,6 +3,7 @@ import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useTyping } from '@/hooks/useTyping';
 import { useTimer } from '@/hooks/useTimer';
 import { usePractice } from '@/hooks/usePractice';
+import { useMobile } from '@/hooks/useMobile';
 import { CharComponent } from './Char';
 import { TopBar } from '@/components/layout/TopBar';
 import { ProgressBar } from '@/components/layout/ProgressBar';
@@ -17,6 +18,7 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ onBack }: CodeEditorProps) => {
   const { chars, cursor, isFinished, langName, resetGame, finishGame } = useGameStore();
+  const isMobile = useMobile();
   
   const {
     practiceState,
@@ -32,7 +34,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
     handleError(errorIndex);
   }, [handleError]);
 
-  const { handleKeyDown, inputRef, shake, focusInput } = useTyping(onErrorCallback);
+  const { handleKeyDown, handleInput, inputRef, shake, focusInput } = useTyping(onErrorCallback);
   const { scrollRef, containerRef } = useAutoScroll();
   const { time, wpm, timeRemaining } = useTimer();
   
@@ -90,7 +92,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
 
         <div
           ref={scrollRef}
-          className="code-scroll-container absolute top-0 left-0 right-0 pl-20 pr-20 pt-8 font-code text-base leading-loose whitespace-pre-wrap break-all transition-transform duration-100"
+          className="code-scroll-container absolute top-0 left-0 right-0 pl-12 md:pl-20 pr-4 md:pr-20 pt-4 md:pt-8 font-code text-sm md:text-base leading-loose whitespace-pre-wrap break-all transition-transform duration-100"
         >
           {chars.map((char, i) => (
             <CharComponent
@@ -102,14 +104,32 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
         </div>
       </div>
 
-      <input
-        ref={inputRef}
-        type="text"
-        className="opacity-0 absolute top-[-9999px]"
-        autoFocus
-        onKeyDown={handleKeyDown}
-        autoComplete="off"
-      />
+      {isMobile ? (
+        <input
+          ref={inputRef}
+          type="text"
+          className="w-full bg-tokyo-bg-dark border-t border-white/10 px-4 py-3 text-center font-code text-white focus:outline-none"
+          autoFocus
+          onKeyDown={handleKeyDown}
+          onInput={handleInput}
+          onChange={handleInput}
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck="false"
+          inputMode="text"
+        />
+      ) : (
+        <input
+          ref={inputRef}
+          type="text"
+          className="opacity-0 absolute top-[-9999px]"
+          autoFocus
+          onKeyDown={handleKeyDown}
+          onInput={handleInput}
+          autoComplete="off"
+        />
+      )}
 
       {isFinished && (
         <ResultsModal

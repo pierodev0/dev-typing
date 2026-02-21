@@ -54,23 +54,23 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-tokyo-bg-darkest flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-tokyo-bg-darkest flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
 
-      <div className="max-w-6xl w-full space-y-8 relative z-10">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-[10px] font-mono text-gray-400 mb-4 border border-white/10">
+      <div className="max-w-6xl w-full space-y-6 md:space-y-8 relative z-10">
+        <div className="text-center mb-6 md:mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-[10px] font-mono text-gray-400 mb-3 md:mb-4 border border-white/10">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             SYSTEM ONLINE
           </div>
-          <h1 className="text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-3">
+          <h1 className="text-4xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2 md:mb-3">
             DEV<span className="text-tokyo-blue">TYPE</span>
           </h1>
-          <p className="text-gray-500 font-mono text-sm tracking-widest uppercase">Master Your Coding Speed</p>
+          <p className="text-gray-500 font-mono text-xs md:text-sm tracking-widest uppercase">Master Your Coding Speed</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
           <GlassCard>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold">Stack Library</h2>
