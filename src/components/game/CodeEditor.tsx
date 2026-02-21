@@ -9,7 +9,7 @@ import { ProgressBar } from '@/components/layout/ProgressBar';
 import { LineNumbers } from '@/components/layout/LineNumbers';
 import { ResultsModal } from './ResultsModal';
 import { PracticeModal } from './PracticeModal';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 
 interface CodeEditorProps {
   onBack: () => void;
@@ -37,6 +37,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
   const { time, wpm, timeRemaining } = useTimer();
   
   const stats = useGameStore((state) => state.stats);
+  const wasPracticeActiveRef = useRef(isPracticeActive);
 
   const lines = useMemo(() => {
     return chars.filter(c => c.char === '\n').length + 1;
@@ -57,6 +58,13 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
       handlePracticeExit();
     }
   }, [handlePracticeComplete, handlePracticeExit, practiceState.repetitionCount, practiceState.requiredRepetitions]);
+
+  useEffect(() => {
+    if (wasPracticeActiveRef.current && !isPracticeActive) {
+      setTimeout(() => focusInput(), 0);
+    }
+    wasPracticeActiveRef.current = isPracticeActive;
+  }, [isPracticeActive, focusInput]);
 
   const scrollTransform = scrollRef.current?.style.transform || 'translateY(0px)';
 

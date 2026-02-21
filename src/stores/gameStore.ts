@@ -25,7 +25,7 @@ interface GameStore {
   startTimer: () => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
-  startPractice: (word: string, errorIndex: number) => void;
+  startPractice: (word: string, errorIndex: number, wordStartIndex: number) => void;
   updatePracticeInput: (input: string) => void;
   incrementPracticeCount: () => void;
   resetPracticeCount: () => void;
@@ -54,6 +54,7 @@ const initialPracticeState: PracticeState = {
   repetitionCount: 0,
   requiredRepetitions: 5,
   errorCharIndex: 0,
+  wordStartIndex: 0,
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -174,7 +175,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ startTime: Date.now() });
   },
 
-  startPractice: (word: string, errorIndex: number) => {
+  startPractice: (word: string, errorIndex: number, wordStartIndex: number) => {
     const { options } = get();
     set({
       practiceState: {
@@ -184,6 +185,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         repetitionCount: 0,
         requiredRepetitions: options.practiceRepetitions,
         errorCharIndex: errorIndex,
+        wordStartIndex,
       },
     });
   },
@@ -217,19 +219,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
   exitPractice: () => {
     const { practiceState, chars } = get();
     const newChars = [...chars];
+    
     for (let i = 0; i < practiceState.targetWord.length; i++) {
-      const charIndex = practiceState.errorCharIndex - 
-        Math.min(practiceState.errorCharIndex, practiceState.targetWord.length - 1) + i;
+      const charIndex = practiceState.wordStartIndex + i;
       if (charIndex >= 0 && charIndex < newChars.length) {
-        newChars[charIndex] = { ...newChars[charIndex], status: 'correct', typed: newChars[charIndex].char };
+        newChars[charIndex] = { 
+          ...newChars[charIndex], 
+          status: 'waiting', 
+          typed: null 
+        };
       }
     }
     
-    const newCursor = Math.min(practiceState.errorCharIndex + 1, chars.length);
-    
     set({
       chars: newChars,
-      cursor: newCursor,
+      cursor: practiceState.wordStartIndex,
       practiceState: initialPracticeState,
     });
   },

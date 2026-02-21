@@ -52,6 +52,7 @@ export interface PracticeState {
   repetitionCount: number;
   requiredRepetitions: number;
   errorCharIndex: number;
+  wordStartIndex: number;
 }
 
 export type SnippetsMap = Record<string, CodeSnippet>;

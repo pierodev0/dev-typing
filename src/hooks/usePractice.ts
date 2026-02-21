@@ -15,7 +15,7 @@ export const usePractice = () => {
     resumeTimer,
   } = useGameStore();
 
-  const extractWord = useCallback((charIndex: number): string => {
+  const extractWord = useCallback((charIndex: number): { word: string; startIndex: number } => {
     const charsArray = chars;
     let start = charIndex;
     let end = charIndex;
@@ -28,15 +28,18 @@ export const usePractice = () => {
       end++;
     }
 
-    return charsArray.slice(start, end).map(c => c.char).join('');
+    return {
+      word: charsArray.slice(start, end).map(c => c.char).join(''),
+      startIndex: start,
+    };
   }, [chars]);
 
   const handleError = useCallback((errorIndex: number) => {
     if (options.practiceMode && !practiceState.isActive) {
-      const word = extractWord(errorIndex);
+      const { word, startIndex } = extractWord(errorIndex);
       if (word.trim()) {
         pauseTimer();
-        startPractice(word, errorIndex);
+        startPractice(word, errorIndex, startIndex);
       }
     }
   }, [options.practiceMode, practiceState.isActive, extractWord, pauseTimer, startPractice]);
