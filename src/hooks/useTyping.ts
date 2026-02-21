@@ -1,13 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import { useGameStore } from '@/stores/gameStore';
 
-export const useTyping = () => {
+export const useTyping = (onError?: (errorIndex: number) => void) => {
   const { 
     chars, 
     cursor, 
     isFinished, 
     stats,
     options,
+    practiceState,
     setCursor, 
     updateChar, 
     incrementErrors,
@@ -24,7 +25,7 @@ export const useTyping = () => {
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isFinished) return;
+    if (isFinished || practiceState.isActive) return;
 
     if (e.key === 'Escape') {
       finishGame();
@@ -91,6 +92,11 @@ export const useTyping = () => {
       }
       triggerShake();
       
+      if (options.practiceMode && onError) {
+        onError(cursor);
+        return;
+      }
+      
       if (options.stopOnError) {
         return;
       }
@@ -109,7 +115,7 @@ export const useTyping = () => {
     if (newCur >= chars.length) {
       finishGame();
     }
-  }, [chars, cursor, isFinished, stats.started, options.stopOnError, setCursor, updateChar, incrementErrors, startTimer, finishGame, triggerShake]);
+  }, [chars, cursor, isFinished, stats.started, options.stopOnError, options.practiceMode, practiceState.isActive, setCursor, updateChar, incrementErrors, startTimer, finishGame, triggerShake, onError]);
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();

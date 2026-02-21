@@ -14,6 +14,8 @@ const TIME_OPTIONS = [
   { label: '5m', value: 300 },
 ];
 
+const REPETITION_OPTIONS = [1, 3, 5, 7, 10];
+
 interface HomePageProps {
   onStartGame: (code: string, lang: string, options: GameOptions) => void;
 }
@@ -23,6 +25,8 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
   const [options, setOptions] = useState<GameOptions>({
     stopOnError: false,
     timeLimit: null,
+    practiceMode: false,
+    practiceRepetitions: 5,
   });
 
   const handleCustomCode = (code: string) => {
@@ -39,6 +43,14 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
 
   const setTimeLimit = (value: number | null) => {
     setOptions(prev => ({ ...prev, timeLimit: value }));
+  };
+
+  const togglePracticeMode = () => {
+    setOptions(prev => ({ ...prev, practiceMode: !prev.practiceMode }));
+  };
+
+  const setPracticeRepetitions = (value: number) => {
+    setOptions(prev => ({ ...prev, practiceRepetitions: value }));
   };
 
   return (
@@ -107,6 +119,38 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
               </div>
             </div>
 
+            <div className="flex items-center gap-3 mb-2 px-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={options.practiceMode}
+                  onChange={togglePracticeMode}
+                  className="checkbox checkbox-sm checkbox-primary"
+                />
+                <span className="text-xs text-gray-400">Practice mode</span>
+              </label>
+              {options.practiceMode && (
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-gray-600">x</span>
+                  <div className="flex gap-1">
+                    {REPETITION_OPTIONS.map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => setPracticeRepetitions(num)}
+                        className={`w-6 h-6 text-[10px] rounded transition-all ${
+                          options.practiceRepetitions === num
+                            ? 'bg-tokyo-magenta text-white font-bold'
+                            : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               className="btn w-full mt-4 bg-tokyo-blue hover:bg-tokyo-blue/80 text-tokyo-bg border-none font-bold py-3 shadow-lg shadow-tokyo-blue/20"
               onClick={handleStartSnippet}
@@ -150,6 +194,38 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4 px-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={options.practiceMode}
+                  onChange={togglePracticeMode}
+                  className="checkbox checkbox-sm checkbox-primary"
+                />
+                <span className="text-xs text-gray-400">Practice mode</span>
+              </label>
+              {options.practiceMode && (
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-gray-600">x</span>
+                  <div className="flex gap-1">
+                    {REPETITION_OPTIONS.map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => setPracticeRepetitions(num)}
+                        className={`w-6 h-6 text-[10px] rounded transition-all ${
+                          options.practiceRepetitions === num
+                            ? 'bg-tokyo-magenta text-white font-bold'
+                            : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <CustomBuffer onSubmit={handleCustomCode} />

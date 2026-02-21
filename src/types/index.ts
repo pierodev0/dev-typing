@@ -41,6 +41,17 @@ export interface CodeSnippet {
 export interface GameOptions {
   stopOnError: boolean;
   timeLimit: number | null;
+  practiceMode: boolean;
+  practiceRepetitions: number;
+}
+
+export interface PracticeState {
+  isActive: boolean;
+  targetWord: string;
+  currentInput: string;
+  repetitionCount: number;
+  requiredRepetitions: number;
+  errorCharIndex: number;
 }
 
 export type SnippetsMap = Record<string, CodeSnippet>;

@@ -2,12 +2,14 @@ import { useGameStore } from '@/stores/gameStore';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useTyping } from '@/hooks/useTyping';
 import { useTimer } from '@/hooks/useTimer';
+import { usePractice } from '@/hooks/usePractice';
 import { CharComponent } from './Char';
 import { TopBar } from '@/components/layout/TopBar';
 import { ProgressBar } from '@/components/layout/ProgressBar';
 import { LineNumbers } from '@/components/layout/LineNumbers';
 import { ResultsModal } from './ResultsModal';
-import { useMemo } from 'react';
+import { PracticeModal } from './PracticeModal';
+import { useMemo, useCallback } from 'react';
 
 interface CodeEditorProps {
   onBack: () => void;
@@ -15,7 +17,22 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ onBack }: CodeEditorProps) => {
   const { chars, cursor, isFinished, langName, resetGame, finishGame } = useGameStore();
-  const { handleKeyDown, inputRef, shake, focusInput } = useTyping();
+  
+  const {
+    practiceState,
+    handleError,
+    handlePracticeComplete,
+    handlePracticeError,
+    handlePracticeExit,
+    handleInputChange,
+    isPracticeActive,
+  } = usePractice();
+
+  const onErrorCallback = useCallback((errorIndex: number) => {
+    handleError(errorIndex);
+  }, [handleError]);
+
+  const { handleKeyDown, inputRef, shake, focusInput } = useTyping(onErrorCallback);
   const { scrollRef, containerRef } = useAutoScroll();
   const { time, wpm, timeRemaining } = useTimer();
   
@@ -33,6 +50,13 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
     resetGame();
     focusInput();
   };
+
+  const handlePracticeDone = useCallback(() => {
+    handlePracticeComplete();
+    if (practiceState.repetitionCount + 1 >= practiceState.requiredRepetitions) {
+      handlePracticeExit();
+    }
+  }, [handlePracticeComplete, handlePracticeExit, practiceState.repetitionCount, practiceState.requiredRepetitions]);
 
   const scrollTransform = scrollRef.current?.style.transform || 'translateY(0px)';
 
@@ -84,6 +108,18 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
           stats={stats}
           onRetry={handleRetry}
           onBack={onBack}
+        />
+      )}
+
+      {isPracticeActive && (
+        <PracticeModal
+          targetWord={practiceState.targetWord}
+          currentInput={practiceState.currentInput}
+          repetitionCount={practiceState.repetitionCount}
+          requiredRepetitions={practiceState.requiredRepetitions}
+          onInputChange={handleInputChange}
+          onComplete={handlePracticeDone}
+          onError={handlePracticeError}
         />
       )}
     </div>
