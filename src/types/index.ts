@@ -56,3 +56,29 @@ export interface PracticeState {
 }
 
 export type SnippetsMap = Record<string, CodeSnippet>;
+
+export interface ExerciseResult {
+  id: string;
+  date: string;
+  wpm: number;
+  acc: number;
+  time: number;
+  errors: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  lang: string;
+  createdAt: string;
+}
+
+export interface SavedSnippet {
+  id: string;
+  name: string;
+  code: string;
+  lang: string;
+  categoryId: string | null;
+  createdAt: string;
+  results: ExerciseResult[];
+}

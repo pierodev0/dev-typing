@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { HomePage } from '@/pages/HomePage';
 import { GamePage } from '@/pages/GamePage';
+import { LibraryPage } from '@/pages/LibraryPage';
 import type { GameOptions } from '@/types';
 
-type View = 'home' | 'game';
+type View = 'home' | 'game' | 'library';
 
 interface GameConfig {
   code: string;
@@ -24,8 +25,8 @@ export const App = () => {
     } 
   });
 
-  const handleStartGame = (code: string, lang: string, options: GameOptions) => {
-    setConfig({ code, lang, options });
+  const handleStartGame = (code: string, lang: string, options?: GameOptions) => {
+    setConfig({ code, lang, options: options || config.options });
     setView('game');
   };
 
@@ -33,12 +34,20 @@ export const App = () => {
     setView('home');
   };
 
+  const handleGoToLibrary = () => {
+    setView('library');
+  };
+
   return (
     <div className="text-base-content antialiased">
-      {view === 'home' ? (
-        <HomePage onStartGame={handleStartGame} />
-      ) : (
+      {view === 'home' && (
+        <HomePage onStartGame={handleStartGame} onGoToLibrary={handleGoToLibrary} />
+      )}
+      {view === 'game' && (
         <GamePage code={config.code} lang={config.lang} options={config.options} onBack={handleBack} />
+      )}
+      {view === 'library' && (
+        <LibraryPage onBack={handleBack} onStartGame={handleStartGame} />
       )}
     </div>
   );

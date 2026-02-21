@@ -4,6 +4,7 @@ import { CodePreview } from '@/components/home/CodePreview';
 import { CustomBuffer } from '@/components/home/CustomBuffer';
 import { LanguageSelector } from '@/components/home/LanguageSelector';
 import { REPO_DATA } from '@/data/codeSnippets';
+import { usePersistenceStore } from '@/stores/persistenceStore';
 import type { GameOptions } from '@/types';
 
 const TIME_OPTIONS = [
@@ -18,9 +19,10 @@ const REPETITION_OPTIONS = [1, 3, 5, 7, 10];
 
 interface HomePageProps {
   onStartGame: (code: string, lang: string, options: GameOptions) => void;
+  onGoToLibrary: () => void;
 }
 
-export const HomePage = ({ onStartGame }: HomePageProps) => {
+export const HomePage = ({ onStartGame, onGoToLibrary }: HomePageProps) => {
   const [selectedLang, setSelectedLang] = useState('js');
   const [options, setOptions] = useState<GameOptions>({
     stopOnError: false,
@@ -28,13 +30,18 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
     practiceMode: false,
     practiceRepetitions: 5,
   });
+  
+  const findOrCreateSnippet = usePersistenceStore((state) => state.findOrCreateSnippet);
 
   const handleCustomCode = (code: string) => {
+    findOrCreateSnippet(code, 'auto');
     onStartGame(code, 'auto', options);
   };
 
   const handleStartSnippet = () => {
-    onStartGame(REPO_DATA[selectedLang].code, selectedLang, options);
+    const code = REPO_DATA[selectedLang].code;
+    findOrCreateSnippet(code, selectedLang);
+    onStartGame(code, selectedLang, options);
   };
 
   const toggleStopOnError = () => {
@@ -64,10 +71,18 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             SYSTEM ONLINE
           </div>
-          <h1 className="text-4xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2 md:mb-3">
-            DEV<span className="text-tokyo-blue">TYPE</span>
-          </h1>
-          <p className="text-gray-500 font-mono text-xs md:text-sm tracking-widest uppercase">Master Your Coding Speed</p>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <h1 className="text-4xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+              DEV<span className="text-tokyo-blue">TYPE</span>
+            </h1>
+          </div>
+          <p className="text-gray-500 font-mono text-xs md:text-sm tracking-widest uppercase mb-4">Master Your Coding Speed</p>
+          <button 
+            onClick={onGoToLibrary} 
+            className="btn btn-sm btn-ghost text-gray-400 border border-white/10 hover:text-white"
+          >
+            <i className="fa-solid fa-bookmark mr-2"></i> My Library
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">

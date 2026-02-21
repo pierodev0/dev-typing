@@ -16,7 +16,7 @@ interface CodeEditorProps {
 }
 
 export const CodeEditor = ({ onBack }: CodeEditorProps) => {
-  const { chars, cursor, isFinished, langName, resetGame, finishGame } = useGameStore();
+  const { chars, cursor, isFinished, langName, resetGame, finishGame, code } = useGameStore();
   
   const {
     practiceState,
@@ -127,6 +127,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
       {isFinished && (
         <ResultsModal
           stats={stats}
+          code={code}
           onRetry={handleRetry}
           onBack={onBack}
         />
