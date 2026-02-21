@@ -6,8 +6,18 @@ interface LanguageSelectorProps {
   onSelect: (key: string) => void;
 }
 
- 
 export const LanguageSelector = ({ snippets, selected, onSelect }: LanguageSelectorProps) => {
+  const getIconClass = (icon: string) => {
+    if (icon.startsWith('fa-') && !icon.startsWith('fa-solid') && !icon.startsWith('fa-brands')) {
+      const brandIcons = ['fa-js', 'fa-python', 'fa-rust', 'fa-node', 'fa-react', 'fa-vue', 'fa-angular', 'fa-github'];
+      if (brandIcons.includes(icon)) {
+        return `fa-brands ${icon}`;
+      }
+      return `fa-solid ${icon}`;
+    }
+    return icon;
+  };
+
   return (
     <div className="flex gap-1 md:gap-2 mb-4 md:mb-6 flex-wrap">
       {Object.entries(snippets).map(([key, data]) => (
@@ -20,7 +30,7 @@ export const LanguageSelector = ({ snippets, selected, onSelect }: LanguageSelec
               : 'bg-white/5 border-transparent text-gray-500 hover:bg-white/10'
           }`}
         >
-          <i className={`fa-brands ${data.icon} ${data.color}`}></i>
+          <i className={`${getIconClass(data.icon)} ${data.color}`}></i>
           <span className="hidden sm:inline">{data.name}</span>
         </button>
       ))}

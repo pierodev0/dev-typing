@@ -3,7 +3,6 @@ import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { useTyping } from '@/hooks/useTyping';
 import { useTimer } from '@/hooks/useTimer';
 import { usePractice } from '@/hooks/usePractice';
-import { useMobile } from '@/hooks/useMobile';
 import { CharComponent } from './Char';
 import { TopBar } from '@/components/layout/TopBar';
 import { ProgressBar } from '@/components/layout/ProgressBar';
@@ -18,7 +17,6 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ onBack }: CodeEditorProps) => {
   const { chars, cursor, isFinished, langName, resetGame, finishGame } = useGameStore();
-  const isMobile = useMobile();
   
   const {
     practiceState,
@@ -72,8 +70,9 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
 
   return (
     <div 
-      className={`h-screen flex flex-col bg-tokyo-bg-darkest text-tokyo-text ${shake ? 'screen-shake' : ''}`}
+      className={`game-editor h-screen flex flex-col bg-tokyo-bg-darkest text-tokyo-text ${shake ? 'screen-shake' : ''}`}
       onClick={focusInput}
+      onTouchStart={focusInput}
     >
       <TopBar
         langName={langName}
@@ -104,32 +103,20 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
         </div>
       </div>
 
-      {isMobile ? (
-        <input
-          ref={inputRef}
-          type="text"
-          className="w-full bg-tokyo-bg-dark border-t border-white/10 px-4 py-3 text-center font-code text-white focus:outline-none"
-          autoFocus
-          onKeyDown={handleKeyDown}
-          onInput={handleInput}
-          onChange={handleInput}
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck="false"
-          inputMode="text"
-        />
-      ) : (
-        <input
-          ref={inputRef}
-          type="text"
-          className="opacity-0 absolute top-[-9999px]"
-          autoFocus
-          onKeyDown={handleKeyDown}
-          onInput={handleInput}
-          autoComplete="off"
-        />
-      )}
+      <input
+        ref={inputRef}
+        type="text"
+        className="opacity-0 absolute top-[-9999px]"
+        autoFocus
+        onKeyDown={handleKeyDown}
+        onInput={handleInput}
+        onChange={handleInput}
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck="false"
+        inputMode="text"
+      />
 
       {isFinished && (
         <ResultsModal

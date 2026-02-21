@@ -14,7 +14,7 @@ const processCharacter = (
   finishGame?: () => void,
 ) => {
   const target = chars[cursor];
-  if (!target) return { newCursor: cursor, shouldReturn: false };
+  if (!target) return;
 
   let newCur = cursor;
 
@@ -37,11 +37,11 @@ const processCharacter = (
     
     if (options.practiceMode && onError) {
       onError(cursor);
-      return { newCursor: cursor, shouldReturn: true };
+      return;
     }
     
     if (options.stopOnError) {
-      return { newCursor: cursor, shouldReturn: true };
+      return;
     }
     newCur++;
   }
@@ -58,8 +58,6 @@ const processCharacter = (
   if (newCur >= chars.length && finishGame) {
     finishGame();
   }
-
-  return { newCursor: newCur, shouldReturn: false };
 };
 
 export const useTyping = (onError?: (errorIndex: number) => void) => {
@@ -79,7 +77,7 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [shake, setShake] = useState(false);
-  const lastInputLengthRef = useRef(0);
+  const lastProcessedRef = useRef<string>('');
 
   const triggerShake = useCallback(() => {
     setShake(true);
@@ -132,6 +130,9 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
     const char = e.key === 'Enter' ? '\n' : e.key;
     if (char.length > 1) return;
 
+    e.preventDefault();
+
+    lastProcessedRef.current = char;
     processCharacter(char, cursor, chars, options, updateChar, incrementErrors, setCursor, triggerShake, onError, finishGame);
   }, [chars, cursor, isFinished, stats.started, options, practiceState.isActive, setCursor, updateChar, incrementErrors, startTimer, finishGame, triggerShake, onError]);
 
@@ -139,46 +140,27 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
     if (isFinished || practiceState.isActive) return;
     
     const input = e.currentTarget.value;
-    const currentLength = input.length;
-    const previousLength = lastInputLengthRef.current;
     
+    if (input.length === 0) return;
+
+    const lastChar = input[input.length - 1];
+    
+    if (lastChar === lastProcessedRef.current) {
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+      return;
+    }
+
     if (!stats.started) {
       startTimer();
     }
 
-    if (currentLength > previousLength) {
-      const newChars = input.slice(previousLength);
-      for (const char of newChars) {
-        const actualChar = char === '\n' ? '\n' : char;
-        processCharacter(actualChar, cursor, chars, options, updateChar, incrementErrors, setCursor, triggerShake, onError, finishGame);
-        break;
-      }
-    } else if (currentLength < previousLength) {
-      if (options.stopOnError && chars[cursor]?.status === 'incorrect') {
-        updateChar(cursor, { status: 'waiting', typed: null });
-      } else if (cursor > 0) {
-        let newCur = cursor - 1;
-        while (newCur > 0 && chars[newCur].status === 'auto') {
-          updateChar(newCur, { status: 'waiting' });
-          newCur--;
-        }
-        updateChar(newCur, { status: 'waiting', typed: null });
-        setCursor(newCur);
-        
-        const attempted = newCur;
-        const currentErrors = useGameStore.getState().stats.errors;
-        const acc = attempted > 0 
-          ? Math.round(((attempted - currentErrors) / attempted) * 100) 
-          : 100;
-        useGameStore.getState().setStats({ acc: Math.max(0, acc) });
-      }
-    }
-    
-    lastInputLengthRef.current = currentLength;
+    lastProcessedRef.current = lastChar;
+    processCharacter(lastChar, cursor, chars, options, updateChar, incrementErrors, setCursor, triggerShake, onError, finishGame);
     
     if (inputRef.current) {
       inputRef.current.value = '';
-      lastInputLengthRef.current = 0;
     }
   }, [isFinished, practiceState.isActive, stats.started, cursor, chars, options, updateChar, incrementErrors, setCursor, startTimer, triggerShake, onError, finishGame]);
 

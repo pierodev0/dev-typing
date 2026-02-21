@@ -18,10 +18,8 @@
   --error-red: #f7768e;
 }
 
-html, body, #root {
+html {
   height: 100%;
-  width: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -32,6 +30,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   touch-action: manipulation;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 .font-code {
@@ -98,6 +98,15 @@ body {
   background: rgba(22, 22, 30, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.game-editor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {

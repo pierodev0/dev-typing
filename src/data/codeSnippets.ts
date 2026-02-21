@@ -36,7 +36,7 @@ log('World'); // Executed`,
   },
   cpp: {
     name: 'C++',
-    icon: 'fa-c',
+    icon: 'fa-microchip',
     color: 'text-blue-600',
     code: `template <typename T>
 class Matrix {
