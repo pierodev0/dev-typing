@@ -77,7 +77,7 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [shake, setShake] = useState(false);
-  const lastCursorRef = useRef<number>(cursor);
+  const lastCursorRef = useRef(-1);
 
   const triggerShake = useCallback(() => {
     setShake(true);
@@ -146,7 +146,7 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
 
     const currentCursor = useGameStore.getState().cursor;
     
-    if (lastCursorRef.current !== currentCursor) {
+    if (lastCursorRef.current !== -1 && lastCursorRef.current !== currentCursor) {
       if (inputRef.current) {
         inputRef.current.value = '';
       }

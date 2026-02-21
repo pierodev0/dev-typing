@@ -66,6 +66,12 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
     wasPracticeActiveRef.current = isPracticeActive;
   }, [isPracticeActive, focusInput]);
 
+  useEffect(() => {
+    if (chars.length > 0) {
+      setTimeout(() => focusInput(), 100);
+    }
+  }, [chars.length, focusInput]);
+
   const scrollTransform = scrollRef.current?.style.transform || 'translateY(0px)';
 
   return (
@@ -106,7 +112,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
       <input
         ref={inputRef}
         type="text"
-        className="opacity-0 absolute top-[-9999px]"
+        className="fixed opacity-0 z-[-1]"
         autoFocus
         onKeyDown={handleKeyDown}
         onInput={handleInput}
