@@ -7,6 +7,7 @@ export const useTyping = () => {
     cursor, 
     isFinished, 
     stats,
+    options,
     setCursor, 
     updateChar, 
     incrementErrors,
@@ -41,6 +42,11 @@ export const useTyping = () => {
     }
 
     if (e.key === 'Backspace') {
+      if (options.stopOnError && chars[cursor]?.status === 'incorrect') {
+        updateChar(cursor, { status: 'waiting', typed: null });
+        return;
+      }
+      
       if (cursor > 0) {
         let newCur = cursor - 1;
         while (newCur > 0 && chars[newCur].status === 'auto') {
@@ -80,9 +86,15 @@ export const useTyping = () => {
       }
     } else {
       updateChar(cursor, { status: 'incorrect', typed: char });
-      newCur++;
-      incrementErrors();
+      if (target.status !== 'incorrect') {
+        incrementErrors();
+      }
       triggerShake();
+      
+      if (options.stopOnError) {
+        return;
+      }
+      newCur++;
     }
 
     const attempted = newCur;
@@ -97,7 +109,7 @@ export const useTyping = () => {
     if (newCur >= chars.length) {
       finishGame();
     }
-  }, [chars, cursor, isFinished, stats.started, setCursor, updateChar, incrementErrors, startTimer, finishGame, triggerShake]);
+  }, [chars, cursor, isFinished, stats.started, options.stopOnError, setCursor, updateChar, incrementErrors, startTimer, finishGame, triggerShake]);
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();

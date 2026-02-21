@@ -38,4 +38,8 @@ export interface CodeSnippet {
   code: string;
 }
 
+export interface GameOptions {
+  stopOnError: boolean;
+}
+
 export type SnippetsMap = Record<string, CodeSnippet>;

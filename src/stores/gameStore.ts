@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Char, GameStats } from '@/types';
+import type { Char, GameStats, GameOptions } from '@/types';
 import { parseCodeToChars } from '@/lib/parser';
 
 interface GameStore {
@@ -11,8 +11,9 @@ interface GameStore {
   lang: string;
   langName: string;
   startTime: number | null;
+  options: GameOptions;
   
-  initGame: (code: string, lang: string) => void;
+  initGame: (code: string, lang: string, options?: GameOptions) => void;
   resetGame: () => void;
   setCursor: (cursor: number) => void;
   setStats: (stats: Partial<GameStats>) => void;
@@ -30,6 +31,10 @@ const initialStats: GameStats = {
   started: false,
 };
 
+const defaultOptions: GameOptions = {
+  stopOnError: false,
+};
+
 export const useGameStore = create<GameStore>((set, get) => ({
   chars: [],
   cursor: 0,
@@ -39,8 +44,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lang: '',
   langName: '',
   startTime: null,
+  options: defaultOptions,
 
-  initGame: (code: string, lang: string) => {
+  initGame: (code: string, lang: string, options?: GameOptions) => {
     const { chars, detectedLang } = parseCodeToChars(code, lang);
     set({
       chars,
@@ -51,11 +57,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lang,
       langName: lang === 'auto' ? detectedLang : lang,
       startTime: null,
+      options: options || defaultOptions,
     });
   },
 
   resetGame: () => {
-    const { code, lang } = get();
+    const { code, lang, options } = get();
     const { chars, detectedLang } = parseCodeToChars(code, lang);
     set({
       chars,
@@ -64,6 +71,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isFinished: false,
       langName: lang === 'auto' ? detectedLang : lang,
       startTime: null,
+      options,
     });
   },
 

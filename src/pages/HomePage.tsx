@@ -4,16 +4,28 @@ import { CodePreview } from '@/components/home/CodePreview';
 import { CustomBuffer } from '@/components/home/CustomBuffer';
 import { LanguageSelector } from '@/components/home/LanguageSelector';
 import { REPO_DATA } from '@/data/codeSnippets';
+import type { GameOptions } from '@/types';
 
 interface HomePageProps {
-  onStartGame: (code: string, lang: string) => void;
+  onStartGame: (code: string, lang: string, options: GameOptions) => void;
 }
 
 export const HomePage = ({ onStartGame }: HomePageProps) => {
   const [selectedLang, setSelectedLang] = useState('js');
+  const [options, setOptions] = useState<GameOptions>({
+    stopOnError: false,
+  });
 
   const handleCustomCode = (code: string) => {
-    onStartGame(code, 'auto');
+    onStartGame(code, 'auto', options);
+  };
+
+  const handleStartSnippet = () => {
+    onStartGame(REPO_DATA[selectedLang].code, selectedLang, options);
+  };
+
+  const toggleStopOnError = () => {
+    setOptions(prev => ({ ...prev, stopOnError: !prev.stopOnError }));
   };
 
   return (
@@ -51,9 +63,25 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
               filename={`index.${selectedLang}`}
             />
 
+            <div className="flex items-center gap-3 mt-4 mb-2 px-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={options.stopOnError}
+                  onChange={toggleStopOnError}
+                  className="checkbox checkbox-sm checkbox-primary"
+                />
+                <span className="text-xs text-gray-400">Stop on error</span>
+              </label>
+              <span className="text-[10px] text-gray-600">|</span>
+              <span className="text-[10px] text-gray-600">
+                {options.stopOnError ? 'Must correct errors to continue' : 'Errors allow progression'}
+              </span>
+            </div>
+
             <button
-              className="btn w-full mt-6 bg-tokyo-blue hover:bg-tokyo-blue/80 text-tokyo-bg border-none font-bold py-3 shadow-lg shadow-tokyo-blue/20"
-              onClick={() => onStartGame(REPO_DATA[selectedLang].code, selectedLang)}
+              className="btn w-full mt-4 bg-tokyo-blue hover:bg-tokyo-blue/80 text-tokyo-bg border-none font-bold py-3 shadow-lg shadow-tokyo-blue/20"
+              onClick={handleStartSnippet}
             >
               <i className="fa-solid fa-bolt mr-2"></i> Initialize Session
             </button>
@@ -63,6 +91,18 @@ export const HomePage = ({ onStartGame }: HomePageProps) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs uppercase tracking-widest text-gray-400 font-bold">Custom Buffer</h2>
               <i className="fa-solid fa-terminal text-tokyo-blue"></i>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4 px-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={options.stopOnError}
+                  onChange={toggleStopOnError}
+                  className="checkbox checkbox-sm checkbox-primary"
+                />
+                <span className="text-xs text-gray-400">Stop on error</span>
+              </label>
             </div>
 
             <CustomBuffer onSubmit={handleCustomCode} />
