@@ -128,6 +128,7 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
           onInputChange={handleInputChange}
           onComplete={handlePracticeDone}
           onError={handlePracticeError}
+          onExit={handlePracticeExit}
         />
       )}
     </div>

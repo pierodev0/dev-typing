@@ -8,6 +8,7 @@ interface PracticeModalProps {
   onInputChange: (input: string) => void;
   onComplete: () => void;
   onError: () => void;
+  onExit: () => void;
 }
 
 export const PracticeModal = ({
@@ -18,6 +19,7 @@ export const PracticeModal = ({
   onInputChange,
   onComplete,
   onError,
+  onExit,
 }: PracticeModalProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hasError, setHasError] = useState(false);
@@ -34,7 +36,7 @@ export const PracticeModal = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
-      return;
+      onExit();
     }
   };
 
@@ -135,6 +137,18 @@ export const PracticeModal = ({
             Incorrect! Try again from the beginning
           </div>
         )}
+
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-[10px] text-gray-600">
+            Press <kbd className="px-1 py-0.5 bg-white/10 rounded text-gray-400">Esc</kbd> to skip
+          </span>
+          <button
+            onClick={onExit}
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
+          >
+            <i className="fa-solid fa-xmark"></i> Skip practice
+          </button>
+        </div>
       </div>
     </div>
   );
