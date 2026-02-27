@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { SavedSnippet, ExerciseResult, Category } from '@/types';
+import type { SavedSnippet, ExerciseResult, CustomLanguage, SavedSequence } from '@/types';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
 
 const generateSnippetName = (): string => {
@@ -11,42 +11,61 @@ const generateSnippetName = (): string => {
   });
 };
 
+const LANGUAGE_COLORS = [
+  'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  'bg-green-500/20 text-green-400 border-green-500/30',
+  'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  'bg-red-500/20 text-red-400 border-red-500/30',
+  'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  'bg-teal-500/20 text-teal-400 border-teal-500/30',
+];
+
 interface PersistenceStore {
   snippets: SavedSnippet[];
-  categories: Category[];
+  customLanguages: CustomLanguage[];
+  sequences: SavedSequence[];
   
-  addSnippet: (name: string, code: string, lang: string, categoryId?: string | null) => string;
+  addSnippet: (name: string, code: string, lang: string) => string;
   findOrCreateSnippet: (code: string, lang: string) => string;
   updateSnippet: (id: string, name: string, code: string, lang: string) => void;
   renameSnippet: (id: string, name: string) => void;
-  moveSnippetToCategory: (id: string, categoryId: string | null) => void;
+  changeSnippetLanguage: (id: string, lang: string) => void;
   deleteSnippet: (id: string) => void;
   addResult: (snippetId: string, result: Omit<ExerciseResult, 'id' | 'date'>) => void;
   getSnippet: (id: string) => SavedSnippet | undefined;
   getSnippetByCode: (code: string) => SavedSnippet | undefined;
   clearHistory: (snippetId: string) => void;
   
-  addCategory: (name: string, lang: string) => string;
-  renameCategory: (id: string, name: string) => void;
-  deleteCategory: (id: string) => void;
-  getCategory: (id: string) => Category | undefined;
-  getCategoriesByLang: (lang: string) => Category[];
+  addCustomLanguage: (name: string) => string;
+  renameCustomLanguage: (id: string, name: string) => void;
+  deleteCustomLanguage: (id: string) => void;
+  getCustomLanguage: (id: string) => CustomLanguage | undefined;
+
+  addSequence: (name: string, snippetIds: string[]) => string;
+  renameSequence: (id: string, name: string) => void;
+  deleteSequence: (id: string) => void;
+  updateSequenceLastPracticed: (id: string) => void;
+  getSequence: (id: string) => SavedSequence | undefined;
 }
 
 export const usePersistenceStore = create<PersistenceStore>()(
   persist(
     (set, get) => ({
       snippets: [],
-      categories: [],
+      customLanguages: [],
+      sequences: [],
 
-      addSnippet: (name: string, code: string, lang: string, categoryId?: string | null) => {
+      addSnippet: (name: string, code: string, lang: string) => {
         const id = `snippet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const newSnippet: SavedSnippet = {
           id,
           name,
           code,
           lang,
-          categoryId: categoryId || null,
           createdAt: new Date().toISOString(),
           results: [],
         };
@@ -80,10 +99,10 @@ export const usePersistenceStore = create<PersistenceStore>()(
         }));
       },
 
-      moveSnippetToCategory: (id: string, categoryId: string | null) => {
+      changeSnippetLanguage: (id: string, lang: string) => {
         set((state) => ({
           snippets: state.snippets.map((s) =>
-            s.id === id ? { ...s, categoryId } : s
+            s.id === id ? { ...s, lang } : s
           ),
         }));
       },
@@ -125,59 +144,144 @@ export const usePersistenceStore = create<PersistenceStore>()(
         }));
       },
 
-      addCategory: (name: string, lang: string) => {
-        const id = `category_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const newCategory: Category = {
+      addCustomLanguage: (name: string) => {
+        const id = `lang_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const colorIndex = get().customLanguages.length % LANGUAGE_COLORS.length;
+        const newLanguage: CustomLanguage = {
           id,
           name,
-          lang,
+          color: LANGUAGE_COLORS[colorIndex],
           createdAt: new Date().toISOString(),
         };
         set((state) => ({
-          categories: [...state.categories, newCategory],
+          customLanguages: [...state.customLanguages, newLanguage],
         }));
         return id;
       },
 
-      renameCategory: (id: string, name: string) => {
+      renameCustomLanguage: (id: string, name: string) => {
         set((state) => ({
-          categories: state.categories.map((c) =>
-            c.id === id ? { ...c, name } : c
+          customLanguages: state.customLanguages.map((l) =>
+            l.id === id ? { ...l, name } : l
           ),
         }));
       },
 
-      deleteCategory: (id: string) => {
+      deleteCustomLanguage: (id: string) => {
+        const lang = get().customLanguages.find(l => l.id === id);
+        if (lang) {
+          set((state) => ({
+            customLanguages: state.customLanguages.filter((l) => l.id !== id),
+            snippets: state.snippets.map((s) =>
+              s.lang === id ? { ...s, lang: 'other' } : s
+            ),
+          }));
+        }
+      },
+
+      getCustomLanguage: (id: string) => {
+        return get().customLanguages.find((l) => l.id === id);
+      },
+
+      addSequence: (name: string, snippetIds: string[]) => {
+        const id = `sequence_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const newSequence: SavedSequence = {
+          id,
+          name,
+          snippetIds,
+          createdAt: new Date().toISOString(),
+          lastPracticedAt: null,
+        };
         set((state) => ({
-          categories: state.categories.filter((c) => c.id !== id),
-          snippets: state.snippets.map((s) =>
-            s.categoryId === id ? { ...s, categoryId: null } : s
+          sequences: [...state.sequences, newSequence],
+        }));
+        return id;
+      },
+
+      renameSequence: (id: string, name: string) => {
+        set((state) => ({
+          sequences: state.sequences.map((seq) =>
+            seq.id === id ? { ...seq, name } : seq
           ),
         }));
       },
 
-      getCategory: (id: string) => {
-        return get().categories.find((c) => c.id === id);
+      deleteSequence: (id: string) => {
+        set((state) => ({
+          sequences: state.sequences.filter((seq) => seq.id !== id),
+        }));
       },
 
-      getCategoriesByLang: (lang: string) => {
-        return get().categories.filter((c) => c.lang === lang);
+      updateSequenceLastPracticed: (id: string) => {
+        set((state) => ({
+          sequences: state.sequences.map((seq) =>
+            seq.id === id ? { ...seq, lastPracticedAt: new Date().toISOString() } : seq
+          ),
+        }));
+      },
+
+      getSequence: (id: string) => {
+        return get().sequences.find((seq) => seq.id === id);
       },
     }),
     {
       name: 'devtype-storage',
       migrate: (persisted: any) => {
         if (persisted.snippets) {
-          persisted.snippets = persisted.snippets.map((s: any) => ({
-            ...s,
-            categoryId: s.categoryId || null,
-          }));
+          persisted.snippets = persisted.snippets.map((s: any) => {
+            const { categoryId, ...rest } = s;
+            return { ...rest, lang: s.lang || 'other' };
+          });
         }
-        if (!persisted.categories) {
-          persisted.categories = [];
+        if (!persisted.customLanguages) {
+          persisted.customLanguages = [];
         }
+        if (!persisted.sequences) {
+          persisted.sequences = [];
+        }
+        delete persisted.categories;
         return persisted;
       },
     }
   )
 );
+
+export const getLanguageColor = (langId: string, customLanguages: CustomLanguage[]): string => {
+  const customLang = customLanguages.find(l => l.id === langId);
+  if (customLang) {
+    return customLang.color;
+  }
+  
+  const PREDEFINED_COLORS: Record<string, string> = {
+    js: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    ts: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    py: 'bg-green-500/20 text-green-400 border-green-500/30',
+    rust: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    go: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+    cpp: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+    java: 'bg-red-500/20 text-red-400 border-red-500/30',
+    other: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  };
+  
+  return PREDEFINED_COLORS[langId] || PREDEFINED_COLORS.other;
+};
+
+export const getLanguageName = (langId: string, customLanguages: CustomLanguage[]): string => {
+  const customLang = customLanguages.find(l => l.id === langId);
+  if (customLang) {
+    return customLang.name;
+  }
+  
+  const PREDEFINED_NAMES: Record<string, string> = {
+    js: 'JS',
+    ts: 'TS',
+    py: 'PY',
+    rust: 'Rust',
+    go: 'Go',
+    cpp: 'C++',
+    java: 'Java',
+    other: 'Other',
+  };
+  
+  return PREDEFINED_NAMES[langId] || langId.toUpperCase();
+};

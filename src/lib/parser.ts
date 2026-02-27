@@ -1,8 +1,12 @@
 import hljs from 'highlight.js';
 import type { Char } from '@/types';
 
+const KNOWN_LANGUAGES = ['js', 'ts', 'py', 'python', 'rust', 'go', 'cpp', 'java', 'javascript', 'typescript', 'plaintext', 'text'];
+
 export const parseCodeToChars = (codeString: string, lang: string): { chars: Char[]; detectedLang: string } => {
-  const hlResult = lang === 'auto' 
+  const isKnownLang = KNOWN_LANGUAGES.includes(lang) || hljs.listLanguages().includes(lang);
+  
+  const hlResult = lang === 'auto' || !isKnownLang
     ? hljs.highlightAuto(codeString) 
     : hljs.highlight(codeString, { language: lang });
   

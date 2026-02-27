@@ -1,32 +1,31 @@
 import { useState } from 'react';
-import { usePersistenceStore } from '@/stores/persistenceStore';
+import { usePersistenceStore, getLanguageColor, getLanguageName } from '@/stores/persistenceStore';
 import type { SavedSnippet, ExerciseResult } from '@/types';
 
 interface LibraryPageProps {
   onBack: () => void;
   onStartGame: (code: string, lang: string) => void;
+  onStartSequence?: (snippets: SavedSnippet[]) => void;
+  isInSequence?: boolean;
+  sequenceResults?: SequenceResult[];
+  onFinishSequence?: () => void;
+}
+
+interface SequenceResult {
+  snippetId: string;
+  snippetName: string;
+  result: ExerciseResult;
 }
 
 const PREDEFINED_LANGS = [
-  { id: 'js', label: 'JS', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-  { id: 'ts', label: 'TS', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  { id: 'py', label: 'PY', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
-  { id: 'rust', label: 'Rust', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  { id: 'go', label: 'Go', color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
-  { id: 'cpp', label: 'C++', color: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
-  { id: 'java', label: 'Java', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { id: 'js', label: 'JS' },
+  { id: 'ts', label: 'TS' },
+  { id: 'py', label: 'PY' },
+  { id: 'rust', label: 'Rust' },
+  { id: 'go', label: 'Go' },
+  { id: 'cpp', label: 'C++' },
+  { id: 'java', label: 'Java' },
 ];
-
-const LANG_COLORS: Record<string, string> = {
-  js: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  ts: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  py: 'bg-green-500/20 text-green-400 border-green-500/30',
-  rust: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  go: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  cpp: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  java: 'bg-red-500/20 text-red-400 border-red-500/30',
-  auto: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-};
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
@@ -59,25 +58,44 @@ const getProgress = (results: ExerciseResult[]): { improved: boolean; diff: numb
   return { improved: diff > 0, diff };
 };
 
-export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
+export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPageProps) => {
   const snippets = usePersistenceStore((state) => state.snippets);
-  const categories = usePersistenceStore((state) => state.categories);
+  const customLanguages = usePersistenceStore((state) => state.customLanguages);
+  const sequences = usePersistenceStore((state) => state.sequences);
   const deleteSnippet = usePersistenceStore((state) => state.deleteSnippet);
   const clearHistory = usePersistenceStore((state) => state.clearHistory);
   const renameSnippet = usePersistenceStore((state) => state.renameSnippet);
-  const moveSnippetToCategory = usePersistenceStore((state) => state.moveSnippetToCategory);
-  const addCategory = usePersistenceStore((state) => state.addCategory);
+  const changeSnippetLanguage = usePersistenceStore((state) => state.changeSnippetLanguage);
+  const addCustomLanguage = usePersistenceStore((state) => state.addCustomLanguage);
+  const renameCustomLanguage = usePersistenceStore((state) => state.renameCustomLanguage);
+  const deleteCustomLanguage = usePersistenceStore((state) => state.deleteCustomLanguage);
+  const addSequence = usePersistenceStore((state) => state.addSequence);
+  const renameSequence = usePersistenceStore((state) => state.renameSequence);
+  const deleteSequence = usePersistenceStore((state) => state.deleteSequence);
+  const addSnippet = usePersistenceStore((state) => state.addSnippet);
   
   const [selectedSnippet, setSelectedSnippet] = useState<SavedSnippet | null>(null);
   const [selectedLang, setSelectedLang] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [showNewCategory, setShowNewCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryLang, setNewCategoryLang] = useState<string | null>(null);
+  const [showNewLanguage, setShowNewLanguage] = useState(false);
+  const [newLanguageName, setNewLanguageName] = useState('');
   const [movingSnippet, setMovingSnippet] = useState<SavedSnippet | null>(null);
+  const [editingLangId, setEditingLangId] = useState<string | null>(null);
+  const [editLangValue, setEditLangValue] = useState('');
+  
+  const [sequenceMode, setSequenceMode] = useState(false);
+  const [selectedForSequence, setSelectedForSequence] = useState<Set<string>>(new Set());
+  const [newSequenceName, setNewSequenceName] = useState('');
+  const [showNewSequence, setShowNewSequence] = useState(false);
+  const [renamingSequenceId, setRenamingSequenceId] = useState<string | null>(null);
+  const [renameSequenceValue, setRenameSequenceValue] = useState('');
+
+  const [showNewSnippet, setShowNewSnippet] = useState(false);
+  const [newSnippetName, setNewSnippetName] = useState('');
+  const [newSnippetCode, setNewSnippetCode] = useState('');
+  const [newSnippetLang, setNewSnippetLang] = useState('js');
 
   const handlePlay = (snippet: SavedSnippet) => {
     onStartGame(snippet.code, snippet.lang);
@@ -101,122 +119,149 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
     setRenameValue('');
   };
 
-  const handleCreateCategory = () => {
-    if (newCategoryName.trim() && newCategoryLang) {
-      addCategory(newCategoryName.trim(), newCategoryLang);
-      setNewCategoryName('');
-      setNewCategoryLang(null);
-      setShowNewCategory(false);
+  const handleCreateLanguage = () => {
+    if (newLanguageName.trim()) {
+      addCustomLanguage(newLanguageName.trim());
+      setNewLanguageName('');
+      setShowNewLanguage(false);
     }
   };
 
-  const handleMoveToCategory = (snippetId: string, categoryId: string | null) => {
-    moveSnippetToCategory(snippetId, categoryId);
+  const handleChangeLanguage = (snippetId: string, langId: string) => {
+    changeSnippetLanguage(snippetId, langId);
     setMovingSnippet(null);
   };
 
-  const filteredSnippets = snippets.filter(s => {
-    if (selectedCategoryId) {
-      return s.categoryId === selectedCategoryId;
-    }
-    if (selectedLang) {
-      return s.lang === selectedLang && !s.categoryId;
-    }
-    if (selectedLang === null && !selectedCategoryId) {
-      return true;
-    }
-    return false;
-  });
+  const handleStartEditLang = (langId: string, currentName: string) => {
+    setEditingLangId(langId);
+    setEditLangValue(currentName);
+  };
 
-  const getCategoriesForLang = (lang: string) => {
-    return categories.filter(c => c.lang === lang);
+  const handleEditLang = (id: string) => {
+    if (editLangValue.trim()) {
+      renameCustomLanguage(id, editLangValue.trim());
+    }
+    setEditingLangId(null);
+    setEditLangValue('');
+  };
+
+  const toggleSnippetSelection = (snippetId: string) => {
+    setSelectedForSequence(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(snippetId)) {
+        newSet.delete(snippetId);
+      } else {
+        newSet.add(snippetId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSaveSequence = () => {
+    if (selectedForSequence.size > 0 && newSequenceName.trim()) {
+      addSequence(newSequenceName.trim(), Array.from(selectedForSequence));
+      setSelectedForSequence(new Set());
+      setNewSequenceName('');
+      setShowNewSequence(false);
+      setSequenceMode(false);
+    }
+  };
+
+  const handleStartSavedSequence = (sequenceIds: string[]) => {
+    const sequenceSnippets = sequenceIds
+      .map(id => snippets.find(s => s.id === id))
+      .filter((s): s is SavedSnippet => s !== undefined);
+    
+    if (sequenceSnippets.length > 0 && onStartSequence) {
+      onStartSequence(sequenceSnippets);
+    }
+  };
+
+  const handleRenameSequence = (id: string) => {
+    if (renameSequenceValue.trim()) {
+      renameSequence(id, renameSequenceValue.trim());
+    }
+    setRenamingSequenceId(null);
+    setRenameSequenceValue('');
+  };
+
+  const handleCreateSnippet = () => {
+    if (newSnippetName.trim() && newSnippetCode.trim()) {
+      addSnippet(newSnippetName.trim(), newSnippetCode, newSnippetLang);
+      setNewSnippetName('');
+      setNewSnippetCode('');
+      setNewSnippetLang('js');
+      setShowNewSnippet(false);
+    }
   };
 
   const getLangCount = (langId: string) => {
     return snippets.filter(s => s.lang === langId).length;
   };
 
-  const MoveCategoryModal = ({ snippet }: { snippet: SavedSnippet }) => {
-    const [newCatName, setNewCatName] = useState('');
-    const [showNewCat, setShowNewCat] = useState(false);
-    const langCategories = getCategoriesForLang(snippet.lang);
-    
+  const filteredSnippets = selectedLang 
+    ? snippets.filter(s => s.lang === selectedLang)
+    : snippets;
+
+  const MoveLanguageModal = ({ snippet }: { snippet: SavedSnippet }) => {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="bg-tokyo-bg-dark border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-          <h3 className="text-lg font-bold text-white mb-1">Move to Category</h3>
+          <h3 className="text-lg font-bold text-white mb-1">Move to Language</h3>
           <p className="text-sm text-gray-500 mb-4">
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${LANG_COLORS[snippet.lang] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-              {snippet.lang.toUpperCase()}
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getLanguageColor(snippet.lang, customLanguages)}`}>
+              {getLanguageName(snippet.lang, customLanguages)}
             </span>
             <span className="ml-2">{snippet.name}</span>
           </p>
           
-          <div className="space-y-2 mb-4">
-            <button
-              onClick={() => handleMoveToCategory(snippet.id, null)}
-              className="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors"
-            >
-              <i className="fa-solid fa-inbox mr-2 text-gray-500"></i>
-              No category
-            </button>
-            
-            {langCategories.map(cat => (
+          <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+            {PREDEFINED_LANGS.map(lang => (
               <button
-                key={cat.id}
-                onClick={() => handleMoveToCategory(snippet.id, cat.id)}
-                className="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors"
+                key={lang.id}
+                onClick={() => handleChangeLanguage(snippet.id, lang.id)}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                  snippet.lang === lang.id 
+                    ? 'bg-tokyo-blue/20 text-white' 
+                    : 'bg-white/5 hover:bg-white/10 text-white'
+                }`}
               >
-                <i className="fa-solid fa-folder mr-2 text-tokyo-purple"></i>
-                {cat.name}
-                {snippet.categoryId === cat.id && (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getLanguageColor(lang.id, customLanguages)}`}>
+                  {lang.label}
+                </span>
+                {snippet.lang === lang.id && (
                   <span className="ml-2 text-xs text-tokyo-green">(current)</span>
                 )}
               </button>
             ))}
+            
+            {customLanguages.length > 0 && (
+              <div className="border-t border-white/10 pt-2 mt-2">
+                {customLanguages.map(lang => (
+                  <button
+                    key={lang.id}
+                    onClick={() => handleChangeLanguage(snippet.id, lang.id)}
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                      snippet.lang === lang.id 
+                        ? 'bg-tokyo-blue/20 text-white' 
+                        : 'bg-white/5 hover:bg-white/10 text-white'
+                    }`}
+                  >
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${lang.color}`}>
+                      {lang.name}
+                    </span>
+                    {snippet.lang === lang.id && (
+                      <span className="ml-2 text-xs text-tokyo-green">(current)</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          
-          {showNewCat ? (
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newCatName.trim()) {
-                    const catId = addCategory(newCatName.trim(), snippet.lang);
-                    handleMoveToCategory(snippet.id, catId);
-                  }
-                }}
-                placeholder="New category name..."
-                className="input input-sm bg-tokyo-bg-darkest border-white/10 text-white flex-1"
-                autoFocus
-              />
-              <button 
-                onClick={() => {
-                  if (newCatName.trim()) {
-                    const catId = addCategory(newCatName.trim(), snippet.lang);
-                    handleMoveToCategory(snippet.id, catId);
-                  }
-                }}
-                className="btn btn-primary btn-sm"
-              >
-                Create
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNewCat(true)}
-              className="w-full px-4 py-3 rounded-xl border border-dashed border-white/20 hover:border-white/40 text-gray-400 hover:text-white transition-colors"
-            >
-              <i className="fa-solid fa-plus mr-2"></i>
-              New Category
-            </button>
-          )}
           
           <button 
             onClick={() => setMovingSnippet(null)} 
-            className="btn btn-ghost btn-sm w-full mt-2 text-gray-400"
+            className="btn btn-ghost btn-sm w-full text-gray-400"
           >
             Cancel
           </button>
@@ -229,13 +274,10 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
     const currentSnippet = snippets.find(s => s.id === selectedSnippet.id) || selectedSnippet;
     const best = getBestResult(currentSnippet.results);
     const progress = getProgress(currentSnippet.results);
-    const snippetCategory = currentSnippet.categoryId 
-      ? categories.find(c => c.id === currentSnippet.categoryId) 
-      : null;
     
     return (
       <div className="min-h-screen bg-tokyo-bg-darkest text-tokyo-text p-4 md:p-8">
-        {movingSnippet && <MoveCategoryModal snippet={movingSnippet} />}
+        {movingSnippet && <MoveLanguageModal snippet={movingSnippet} />}
         
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
@@ -288,14 +330,9 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
                   </div>
                 )}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${LANG_COLORS[currentSnippet.lang] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-                    {currentSnippet.lang.toUpperCase()}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getLanguageColor(currentSnippet.lang, customLanguages)}`}>
+                    {getLanguageName(currentSnippet.lang, customLanguages)}
                   </span>
-                  {snippetCategory && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-tokyo-purple/20 text-tokyo-purple border border-tokyo-purple/30">
-                      {snippetCategory.name}
-                    </span>
-                  )}
                   <span className="text-gray-500 text-xs">
                     Created {formatDate(currentSnippet.createdAt)}
                   </span>
@@ -395,24 +432,267 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
 
   return (
     <div className="min-h-screen bg-tokyo-bg-darkest text-tokyo-text p-4 md:p-8">
-      {movingSnippet && <MoveCategoryModal snippet={movingSnippet} />}
+      {movingSnippet && <MoveLanguageModal snippet={movingSnippet} />}
       
+      {showNewSnippet && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-tokyo-bg-dark border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-4">Add New Snippet</h3>
+            
+            <div className="space-y-4 mb-4">
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Name</label>
+                <input
+                  type="text"
+                  value={newSnippetName}
+                  onChange={(e) => setNewSnippetName(e.target.value)}
+                  placeholder="My snippet name..."
+                  className="input input-bordered w-full bg-tokyo-bg-darkest border-white/10 text-white"
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Language</label>
+                <select
+                  value={newSnippetLang}
+                  onChange={(e) => setNewSnippetLang(e.target.value)}
+                  className="select select-bordered w-full bg-tokyo-bg-darkest border-white/10 text-white"
+                >
+                  {PREDEFINED_LANGS.map(lang => (
+                    <option key={lang.id} value={lang.id}>{lang.label}</option>
+                  ))}
+                  {customLanguages.map(lang => (
+                    <option key={lang.id} value={lang.id}>{lang.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Code</label>
+                <textarea
+                  value={newSnippetCode}
+                  onChange={(e) => setNewSnippetCode(e.target.value)}
+                  placeholder="Paste your code here..."
+                  className="textarea textarea-bordered w-full h-48 bg-tokyo-bg-darkest border-white/10 text-white font-mono text-sm"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <button 
+                onClick={() => { setShowNewSnippet(false); setNewSnippetName(''); setNewSnippetCode(''); setNewSnippetLang('js'); }} 
+                className="btn btn-ghost text-gray-400"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreateSnippet}
+                disabled={!newSnippetName.trim() || !newSnippetCode.trim()}
+                className="btn btn-primary"
+              >
+                Add Snippet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-white">
             <i className="fa-solid fa-bookmark text-tokyo-purple mr-3"></i>
             My Library
           </h1>
-          <button onClick={onBack} className="btn btn-ghost text-gray-400">
-            <i className="fa-solid fa-home mr-2"></i> Home
-          </button>
+          <div className="flex gap-2">
+            {!sequenceMode && (
+              <>
+                <button 
+                  onClick={() => setShowNewSnippet(true)} 
+                  className="btn btn-primary btn-sm"
+                >
+                  <i className="fa-solid fa-plus mr-2"></i> Add Snippet
+                </button>
+                {snippets.length > 0 && (
+                  <button 
+                    onClick={() => setSequenceMode(true)} 
+                    className="btn btn-ghost text-gray-400"
+                  >
+                    <i className="fa-solid fa-list-ol mr-2"></i> Create Sequence
+                  </button>
+                )}
+              </>
+            )}
+            {sequenceMode && (
+              <button 
+                onClick={() => { setSequenceMode(false); setSelectedForSequence(new Set()); }} 
+                className="btn btn-ghost text-gray-400"
+              >
+                Cancel
+              </button>
+            )}
+            <button onClick={onBack} className="btn btn-ghost text-gray-400">
+              <i className="fa-solid fa-home mr-2"></i> Home
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        {sequences.length > 0 && !sequenceMode && (
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-white mb-3">
+              <i className="fa-solid fa-list-ol text-tokyo-blue mr-2"></i>
+              My Sequences
+            </h2>
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+              {sequences.map(seq => {
+                const seqSnippets = seq.snippetIds
+                  .map(id => snippets.find(s => s.id === id))
+                  .filter((s): s is SavedSnippet => s !== undefined);
+                
+                return (
+                  <div 
+                    key={seq.id} 
+                    className="bg-tokyo-bg-dark border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors"
+                  >
+                    {renamingSequenceId === seq.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={renameSequenceValue}
+                          onChange={(e) => setRenameSequenceValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRenameSequence(seq.id);
+                            if (e.key === 'Escape') setRenamingSequenceId(null);
+                          }}
+                          className="input input-sm bg-tokyo-bg-darkest border-white/10 text-white flex-1"
+                          autoFocus
+                        />
+                        <button onClick={() => handleRenameSequence(seq.id)} className="btn btn-primary btn-sm">
+                          <i className="fa-solid fa-check"></i>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-bold text-white truncate flex-1">{seq.name}</h3>
+                          <div className="flex gap-1">
+                            <button 
+                              onClick={() => { setRenamingSequenceId(seq.id); setRenameSequenceValue(seq.name); }}
+                              className="btn btn-ghost btn-xs text-gray-500 hover:text-white"
+                            >
+                              <i className="fa-solid fa-pen"></i>
+                            </button>
+                            <button 
+                              onClick={() => deleteSequence(seq.id)}
+                              className="btn btn-ghost btn-xs text-gray-500 hover:text-red-400"
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500 mb-3">
+                          {seqSnippets.length} snippets
+                        </div>
+                        <button 
+                          onClick={() => handleStartSavedSequence(seq.snippetIds)}
+                          className="btn btn-primary btn-sm w-full"
+                        >
+                          <i className="fa-solid fa-play mr-2"></i> Practice
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {sequenceMode && (
+          <div className="bg-tokyo-bg-dark border border-white/10 rounded-xl p-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white">Select Snippets</h2>
+                <p className="text-gray-500 text-sm">{selectedForSequence.size} selected</p>
+              </div>
+              <div className="flex gap-2">
+                {selectedForSequence.size > 0 && !showNewSequence && (
+                  <button 
+                    onClick={() => setShowNewSequence(true)}
+                    className="btn btn-primary btn-sm"
+                  >
+                    <i className="fa-solid fa-save mr-2"></i> Save Sequence
+                  </button>
+                )}
+                {selectedForSequence.size > 0 && onStartSequence && (
+                  <button 
+                    onClick={() => {
+                      const selectedSnippets = snippets.filter(s => selectedForSequence.has(s.id));
+                      onStartSequence(selectedSnippets);
+                    }}
+                    className="btn btn-primary btn-sm"
+                  >
+                    <i className="fa-solid fa-play mr-2"></i> Practice Now
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {showNewSequence && (
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/10">
+                <input
+                  type="text"
+                  value={newSequenceName}
+                  onChange={(e) => setNewSequenceName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveSequence();
+                    if (e.key === 'Escape') setShowNewSequence(false);
+                  }}
+                  placeholder="Sequence name..."
+                  className="input input-sm bg-tokyo-bg-darkest border-white/10 text-white flex-1"
+                  autoFocus
+                />
+                <button onClick={handleSaveSequence} className="btn btn-primary btn-sm">
+                  <i className="fa-solid fa-check"></i>
+                </button>
+                <button onClick={() => setShowNewSequence(false)} className="btn btn-ghost btn-sm text-gray-400">
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {filteredSnippets.map(snippet => (
+                <div 
+                  key={snippet.id}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedForSequence.has(snippet.id) 
+                      ? 'bg-tokyo-blue/20 border border-tokyo-blue/30' 
+                      : 'bg-white/5 hover:bg-white/10 border border-transparent'
+                  }`}
+                  onClick={() => toggleSnippetSelection(snippet.id)}
+                >
+                  <input 
+                    type="checkbox" 
+                    checked={selectedForSequence.has(snippet.id)}
+                    onChange={() => toggleSnippetSelection(snippet.id)}
+                    className="checkbox checkbox-sm"
+                  />
+                  <span className="text-white truncate flex-1">{snippet.name}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getLanguageColor(snippet.lang, customLanguages)}`}>
+                    {getLanguageName(snippet.lang, customLanguages)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           <button
-            onClick={() => { setSelectedLang(null); setSelectedCategoryId(null); }}
+            onClick={() => setSelectedLang(null)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              !selectedLang && !selectedCategoryId 
+              !selectedLang
                 ? 'bg-tokyo-blue text-white' 
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'
             }`}
@@ -422,14 +702,15 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
           
           {PREDEFINED_LANGS.map(lang => {
             const count = getLangCount(lang.id);
+            if (count === 0 && snippets.length > 0) return null;
             return (
               <button
                 key={lang.id}
-                onClick={() => { setSelectedLang(lang.id); setSelectedCategoryId(null); }}
+                onClick={() => setSelectedLang(lang.id)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                  selectedLang === lang.id && !selectedCategoryId
-                    ? `${lang.color} ring-2 ring-white/20` 
-                    : `${lang.color} opacity-60 hover:opacity-100`
+                  selectedLang === lang.id
+                    ? `${getLanguageColor(lang.id, customLanguages)} ring-2 ring-white/20` 
+                    : `${getLanguageColor(lang.id, customLanguages)} opacity-60 hover:opacity-100`
                 }`}
               >
                 {lang.label} ({count})
@@ -437,73 +718,85 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
             );
           })}
           
-          {categories.length > 0 && (
-            <>
-              <div className="w-full h-px bg-white/10 my-2"></div>
-              {categories.map(cat => {
-                const catSnippets = snippets.filter(s => s.categoryId === cat.id);
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => { setSelectedLang(cat.lang); setSelectedCategoryId(cat.id); }}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      selectedCategoryId === cat.id
-                        ? 'bg-tokyo-purple/30 text-tokyo-purple ring-2 ring-tokyo-purple/30' 
-                        : 'bg-tokyo-purple/10 text-tokyo-purple/70 hover:bg-tokyo-purple/20'
-                    }`}
-                  >
-                    <i className="fa-solid fa-folder mr-1"></i>
-                    {cat.name} ({catSnippets.length})
-                  </button>
-                );
-              })}
-            </>
-          )}
+          {customLanguages.map(lang => {
+            const count = getLangCount(lang.id);
+            return (
+              <div key={lang.id} className="flex items-center gap-1">
+                {editingLangId === lang.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editLangValue}
+                      onChange={(e) => setEditLangValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleEditLang(lang.id);
+                        if (e.key === 'Escape') setEditingLangId(null);
+                      }}
+                      className="input input-xs bg-tokyo-bg-dark border-white/10 text-white w-20"
+                      autoFocus
+                    />
+                    <button onClick={() => handleEditLang(lang.id)} className="text-xs text-tokyo-green">
+                      <i className="fa-solid fa-check"></i>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setSelectedLang(lang.id)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                        selectedLang === lang.id
+                          ? `${lang.color} ring-2 ring-white/20` 
+                          : `${lang.color} opacity-60 hover:opacity-100`
+                      }`}
+                    >
+                      {lang.name} ({count})
+                    </button>
+                    <button 
+                      onClick={() => handleStartEditLang(lang.id, lang.name)}
+                      className="text-gray-600 hover:text-white text-xs"
+                    >
+                      <i className="fa-solid fa-pen"></i>
+                    </button>
+                    <button 
+                      onClick={() => deleteCustomLanguage(lang.id)}
+                      className="text-gray-600 hover:text-red-400 text-xs"
+                    >
+                      <i className="fa-solid fa-times"></i>
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
           
-          {showNewCategory ? (
-            <div className="flex items-center gap-2 w-full mt-2">
-              <select
-                value={newCategoryLang || ''}
-                onChange={(e) => setNewCategoryLang(e.target.value)}
-                className="select select-sm bg-tokyo-bg-dark border-white/10 text-white"
-              >
-                <option value="">Select lang...</option>
-                {PREDEFINED_LANGS.map(lang => (
-                  <option key={lang.id} value={lang.id}>{lang.label}</option>
-                ))}
-              </select>
+          {showNewLanguage ? (
+            <div className="flex items-center gap-2">
               <input
                 type="text"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
+                value={newLanguageName}
+                onChange={(e) => setNewLanguageName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateCategory();
-                  if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); setNewCategoryLang(null); }
+                  if (e.key === 'Enter') handleCreateLanguage();
+                  if (e.key === 'Escape') { setShowNewLanguage(false); setNewLanguageName(''); }
                 }}
-                placeholder="Category name..."
-                className="input input-sm bg-tokyo-bg-dark border-white/10 text-white flex-1"
+                placeholder="Language name..."
+                className="input input-sm bg-tokyo-bg-dark border-white/10 text-white"
                 autoFocus
               />
-              <button 
-                onClick={handleCreateCategory}
-                className="btn btn-primary btn-sm"
-              >
+              <button onClick={handleCreateLanguage} className="btn btn-primary btn-sm">
                 Add
               </button>
-              <button 
-                onClick={() => { setShowNewCategory(false); setNewCategoryName(''); setNewCategoryLang(null); }} 
-                className="btn btn-ghost btn-sm text-gray-400"
-              >
+              <button onClick={() => { setShowNewLanguage(false); setNewLanguageName(''); }} className="btn btn-ghost btn-sm text-gray-400">
                 Cancel
               </button>
             </div>
           ) : (
             <button
-              onClick={() => setShowNewCategory(true)}
+              onClick={() => setShowNewLanguage(true)}
               className="px-3 py-1.5 rounded-full text-sm font-medium border border-dashed border-white/20 text-gray-500 hover:text-white hover:border-white/40 transition-colors"
             >
               <i className="fa-solid fa-plus mr-1"></i>
-              New Category
+              New Language
             </button>
           )}
         </div>
@@ -518,15 +811,12 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
           </div>
         ) : filteredSnippets.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            No snippets in this category
+            No snippets in this language
           </div>
         ) : (
           <div className="grid gap-4">
             {filteredSnippets.map((snippet) => {
               const best = getBestResult(snippet.results);
-              const snippetCategory = snippet.categoryId 
-                ? categories.find(c => c.id === snippet.categoryId) 
-                : null;
               
               return (
                 <div 
@@ -585,14 +875,9 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
                       >
                         <h3 className="text-lg font-bold text-white mb-1">{snippet.name}</h3>
                         <div className="flex items-center gap-2 flex-wrap text-sm text-gray-500">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${LANG_COLORS[snippet.lang] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-                            {snippet.lang.toUpperCase()}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getLanguageColor(snippet.lang, customLanguages)}`}>
+                            {getLanguageName(snippet.lang, customLanguages)}
                           </span>
-                          {snippetCategory && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-tokyo-purple/20 text-tokyo-purple border border-tokyo-purple/30">
-                              {snippetCategory.name}
-                            </span>
-                          )}
                           <span>{snippet.results.length} attempts</span>
                           {best && (
                             <>
@@ -606,7 +891,7 @@ export const LibraryPage = ({ onBack, onStartGame }: LibraryPageProps) => {
                         <button 
                           onClick={() => setMovingSnippet(snippet)} 
                           className="btn btn-ghost btn-sm text-gray-400 hover:text-white"
-                          title="Move to category"
+                          title="Move to language"
                         >
                           <i className="fa-solid fa-folder"></i>
                         </button>

@@ -10,13 +10,16 @@ import { LineNumbers } from '@/components/layout/LineNumbers';
 import { ResultsModal } from './ResultsModal';
 import { PracticeModal } from './PracticeModal';
 import { useMemo, useCallback, useEffect, useRef } from 'react';
+import type { ExerciseResult } from '@/types';
 
 interface CodeEditorProps {
   onBack: () => void;
+  onFinish?: (result: ExerciseResult) => void;
+  sequenceButtonText?: string;
 }
 
-export const CodeEditor = ({ onBack }: CodeEditorProps) => {
-  const { chars, cursor, isFinished, langName, resetGame, finishGame, code } = useGameStore();
+export const CodeEditor = ({ onBack, onFinish, sequenceButtonText }: CodeEditorProps) => {
+  const { chars, cursor, isFinished, langName, lang, resetGame, finishGame, code } = useGameStore();
   
   const {
     practiceState,
@@ -128,8 +131,11 @@ export const CodeEditor = ({ onBack }: CodeEditorProps) => {
         <ResultsModal
           stats={stats}
           code={code}
+          lang={lang}
           onRetry={handleRetry}
           onBack={onBack}
+          onFinish={onFinish}
+          sequenceButtonText={sequenceButtonText}
         />
       )}
 

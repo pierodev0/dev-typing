@@ -66,19 +66,26 @@ export interface ExerciseResult {
   errors: number;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  lang: string;
-  createdAt: string;
-}
-
 export interface SavedSnippet {
   id: string;
   name: string;
   code: string;
   lang: string;
-  categoryId: string | null;
   createdAt: string;
   results: ExerciseResult[];
+}
+
+export interface CustomLanguage {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+}
+
+export interface SavedSequence {
+  id: string;
+  name: string;
+  snippetIds: string[];
+  createdAt: string;
+  lastPracticedAt: string | null;
 }
