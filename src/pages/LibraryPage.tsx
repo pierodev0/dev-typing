@@ -436,7 +436,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
       
       {showNewSnippet && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-tokyo-bg-dark border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+          <div className="bg-tokyo-bg-dark border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-md sm:max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">Add New Snippet</h3>
             
             <div className="space-y-4 mb-4">
@@ -474,12 +474,12 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   value={newSnippetCode}
                   onChange={(e) => setNewSnippetCode(e.target.value)}
                   placeholder="Paste your code here..."
-                  className="textarea textarea-bordered w-full h-48 bg-tokyo-bg-darkest border-white/10 text-white font-mono text-sm"
+                  className="textarea textarea-bordered w-full h-32 sm:h-48 bg-tokyo-bg-darkest border-white/10 text-white font-mono text-sm"
                 />
               </div>
             </div>
             
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
               <button 
                 onClick={() => { setShowNewSnippet(false); setNewSnippetName(''); setNewSnippetCode(''); setNewSnippetLang('js'); }} 
                 className="btn btn-ghost text-gray-400"
@@ -499,26 +499,31 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
       )}
 
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-white">
-            <i className="fa-solid fa-bookmark text-tokyo-purple mr-3"></i>
-            My Library
+            <i className="fa-solid fa-bookmark text-tokyo-purple mr-0 sm:mr-3"></i>
+            <span className="hidden sm:inline">My Library</span>
+            <span className="sm:hidden">Library</span>
           </h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {!sequenceMode && (
               <>
                 <button 
                   onClick={() => setShowNewSnippet(true)} 
                   className="btn btn-primary btn-sm"
                 >
-                  <i className="fa-solid fa-plus mr-2"></i> Add Snippet
+                  <i className="fa-solid fa-plus mr-1 sm:mr-2"></i>
+                  <span className="hidden sm:inline">Add Snippet</span>
+                  <span className="sm:hidden">Add</span>
                 </button>
                 {snippets.length > 0 && (
                   <button 
                     onClick={() => setSequenceMode(true)} 
-                    className="btn btn-ghost text-gray-400"
+                    className="btn btn-ghost btn-sm text-gray-400"
                   >
-                    <i className="fa-solid fa-list-ol mr-2"></i> Create Sequence
+                    <i className="fa-solid fa-list-ol mr-1 sm:mr-2"></i>
+                    <span className="hidden sm:inline">Create Sequence</span>
+                    <span className="sm:hidden">Sequence</span>
                   </button>
                 )}
               </>
@@ -526,13 +531,15 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
             {sequenceMode && (
               <button 
                 onClick={() => { setSequenceMode(false); setSelectedForSequence(new Set()); }} 
-                className="btn btn-ghost text-gray-400"
+                className="btn btn-ghost btn-sm text-gray-400"
               >
-                Cancel
+                <i className="fa-solid fa-times mr-1 sm:mr-2"></i>
+                <span className="hidden sm:inline">Cancel</span>
               </button>
             )}
-            <button onClick={onBack} className="btn btn-ghost text-gray-400">
-              <i className="fa-solid fa-home mr-2"></i> Home
+            <button onClick={onBack} className="btn btn-ghost btn-sm text-gray-400">
+              <i className="fa-solid fa-home mr-1 sm:mr-2"></i>
+              <span className="hidden sm:inline">Home</span>
             </button>
           </div>
         </div>
@@ -543,7 +550,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
               <i className="fa-solid fa-list-ol text-tokyo-blue mr-2"></i>
               My Sequences
             </h2>
-            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {sequences.map(seq => {
                 const seqSnippets = seq.snippetIds
                   .map(id => snippets.find(s => s.id === id))
@@ -688,10 +695,10 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 mb-6">
+        <div className="flex flex-wrap items-center gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             onClick={() => setSelectedLang(null)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
               !selectedLang
                 ? 'bg-tokyo-blue text-white' 
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'
@@ -707,7 +714,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
               <button
                 key={lang.id}
                 onClick={() => setSelectedLang(lang.id)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
                   selectedLang === lang.id
                     ? `${getLanguageColor(lang.id, customLanguages)} ring-2 ring-white/20` 
                     : `${getLanguageColor(lang.id, customLanguages)} opacity-60 hover:opacity-100`
@@ -743,7 +750,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   <>
                     <button
                       onClick={() => setSelectedLang(lang.id)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
                         selectedLang === lang.id
                           ? `${lang.color} ring-2 ring-white/20` 
                           : `${lang.color} opacity-60 hover:opacity-100`
@@ -870,10 +877,10 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   ) : (
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div 
-                        className="flex-1 cursor-pointer"
+                        className="flex-1 cursor-pointer min-w-0"
                         onClick={() => setSelectedSnippet(snippet)}
                       >
-                        <h3 className="text-lg font-bold text-white mb-1">{snippet.name}</h3>
+                        <h3 className="text-lg font-bold text-white mb-1 truncate">{snippet.name}</h3>
                         <div className="flex items-center gap-2 flex-wrap text-sm text-gray-500">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getLanguageColor(snippet.lang, customLanguages)}`}>
                             {getLanguageName(snippet.lang, customLanguages)}
@@ -887,7 +894,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button 
                           onClick={() => setMovingSnippet(snippet)} 
                           className="btn btn-ghost btn-sm text-gray-400 hover:text-white"
@@ -905,13 +912,15 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                           onClick={() => setSelectedSnippet(snippet)} 
                           className="btn btn-ghost btn-sm text-gray-400"
                         >
-                          <i className="fa-solid fa-chart-line mr-1"></i> Stats
+                          <i className="fa-solid fa-chart-line mr-1"></i>
+                          <span className="hidden sm:inline">Stats</span>
                         </button>
                         <button 
                           onClick={() => handlePlay(snippet)} 
                           className="btn btn-primary btn-sm"
                         >
-                          <i className="fa-solid fa-play mr-1"></i> Play
+                          <i className="fa-solid fa-play mr-1"></i>
+                          <span className="hidden sm:inline">Play</span>
                         </button>
                         <button 
                           onClick={() => setShowDeleteConfirm(snippet.id)} 
