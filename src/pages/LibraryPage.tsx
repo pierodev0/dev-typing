@@ -280,16 +280,17 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
         {movingSnippet && <MoveLanguageModal snippet={movingSnippet} />}
         
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
             <button 
               onClick={() => setSelectedSnippet(null)} 
               className="btn btn-ghost btn-sm text-gray-400"
             >
-              <i className="fa-solid fa-arrow-left mr-2"></i> Back
+              <i className="fa-solid fa-arrow-left mr-1 sm:mr-2"></i>
+              <span className="hidden sm:inline">Back</span>
             </button>
           </div>
 
-          <div className="bg-tokyo-bg-dark border border-white/10 rounded-2xl p-6 mb-6">
+          <div className="bg-tokyo-bg-dark border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
                 {renamingId === currentSnippet.id ? (
@@ -338,41 +339,44 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button 
                   onClick={() => setMovingSnippet(currentSnippet)} 
                   className="btn btn-ghost btn-sm text-gray-400"
                 >
-                  <i className="fa-solid fa-folder mr-1"></i> Move
+                  <i className="fa-solid fa-folder mr-1"></i>
+                  <span className="hidden sm:inline">Move</span>
                 </button>
                 <button 
                   onClick={() => handlePlay(currentSnippet)} 
                   className="btn btn-primary btn-sm"
                 >
-                  <i className="fa-solid fa-play mr-1"></i> Play
+                  <i className="fa-solid fa-play mr-1"></i>
+                  <span className="hidden sm:inline">Play</span>
                 </button>
                 <button 
                   onClick={() => clearHistory(currentSnippet.id)} 
                   className="btn btn-ghost btn-sm text-gray-400"
                 >
-                  Clear History
+                  <i className="fa-solid fa-trash-can mr-1"></i>
+                  <span className="hidden sm:inline">Clear History</span>
                 </button>
               </div>
             </div>
 
             {best && (
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-white/5 rounded-xl p-3 text-center">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+                <div className="bg-white/5 rounded-xl p-2 sm:p-3 text-center">
                   <div className="text-xs text-gray-500 uppercase mb-1">Best WPM</div>
-                  <div className="text-xl font-bold text-tokyo-green">{best.wpm}</div>
+                  <div className="text-lg sm:text-xl font-bold text-tokyo-green">{best.wpm}</div>
                 </div>
-                <div className="bg-white/5 rounded-xl p-3 text-center">
-                  <div className="text-xs text-gray-500 uppercase mb-1">Best Accuracy</div>
-                  <div className="text-xl font-bold text-tokyo-blue">{best.acc}%</div>
+                <div className="bg-white/5 rounded-xl p-2 sm:p-3 text-center">
+                  <div className="text-xs text-gray-500 uppercase mb-1">Best Acc</div>
+                  <div className="text-lg sm:text-xl font-bold text-tokyo-blue">{best.acc}%</div>
                 </div>
-                <div className="bg-white/5 rounded-xl p-3 text-center">
-                  <div className="text-xs text-gray-500 uppercase mb-1">Total Attempts</div>
-                  <div className="text-xl font-bold text-white">{currentSnippet.results.length}</div>
+                <div className="bg-white/5 rounded-xl p-2 sm:p-3 text-center">
+                  <div className="text-xs text-gray-500 uppercase mb-1">Attempts</div>
+                  <div className="text-lg sm:text-xl font-bold text-white">{currentSnippet.results.length}</div>
                 </div>
               </div>
             )}
@@ -393,31 +397,31 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
               {[...currentSnippet.results].reverse().map((result, index) => (
                 <div 
                   key={result.id} 
-                  className="bg-tokyo-bg-dark border border-white/10 rounded-xl p-4 flex items-center justify-between"
+                  className="bg-tokyo-bg-dark border border-white/10 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="text-gray-500 text-sm w-8">#{currentSnippet.results.length - index}</div>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="text-gray-500 text-sm w-6 sm:w-8">#{currentSnippet.results.length - index}</div>
                     <div>
-                      <div className="text-white font-medium">{formatDate(result.date)}</div>
-                      <div className="text-gray-500 text-sm">{formatTime(result.time)}</div>
+                      <div className="text-white font-medium text-sm sm:text-base">{formatDate(result.date)}</div>
+                      <div className="text-gray-500 text-xs sm:text-sm">{formatTime(result.time)}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3 sm:gap-6">
                     <div className="text-center">
                       <div className="text-xs text-gray-500 uppercase">WPM</div>
-                      <div className="text-lg font-bold text-white">{result.wpm}</div>
+                      <div className="text-base sm:text-lg font-bold text-white">{result.wpm}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-gray-500 uppercase">Acc</div>
-                      <div className="text-lg font-bold text-white">{result.acc}%</div>
+                      <div className="text-base sm:text-lg font-bold text-white">{result.acc}%</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xs text-gray-500 uppercase">Errors</div>
-                      <div className="text-lg font-bold text-red-400">{result.errors}</div>
+                      <div className="text-xs text-gray-500 uppercase">Err</div>
+                      <div className="text-base sm:text-lg font-bold text-red-400">{result.errors}</div>
                     </div>
                     {index === 0 && progress && (
-                      <div className={`text-sm font-medium ${progress.improved ? 'text-green-400' : 'text-red-400'}`}>
-                        {progress.improved ? '+' : ''}{progress.diff} WPM
+                      <div className={`text-xs sm:text-sm font-medium ${progress.improved ? 'text-green-400' : 'text-red-400'}`}>
+                        {progress.improved ? '+' : ''}{progress.diff}
                       </div>
                     )}
                   </div>
