@@ -216,9 +216,10 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
     return snippets.filter(s => s.lang === langId).length;
   };
 
-  const filteredSnippets = selectedLang 
+  const filteredSnippets = (selectedLang 
     ? snippets.filter(s => s.lang === selectedLang)
-    : snippets;
+    : snippets
+  ).sort((a, b) => b.results.length - a.results.length);
 
   const MoveLanguageModal = ({ snippet }: { snippet: SavedSnippet }) => {
     return (
