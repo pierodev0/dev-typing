@@ -368,7 +368,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   <button tabIndex={0} className="btn btn-ghost btn-sm text-gray-400">
                     <i className="fa-solid fa-gear"></i>
                   </button>
-                  <div tabIndex={0} className="dropdown-content z-[1] menu p-3 shadow-lg bg-tokyo-bg-dark border border-white/10 rounded-xl w-56 mt-1">
+                  <div tabIndex={0} className="dropdown-content z-[1] menu p-2 sm:p-3 shadow-lg bg-tokyo-bg-dark border border-white/10 rounded-xl w-full sm:w-56 mt-1">
                     <div className="flex items-center gap-2 mb-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -380,14 +380,14 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                         <span className="text-xs text-gray-400">Stop on error</span>
                       </label>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="text-xs text-gray-400">Time:</span>
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1">
                         {TIME_OPTIONS.map((opt) => (
                           <button
                             key={opt.label}
                             onClick={() => setGameOptions(prev => ({ ...prev, timeLimit: opt.value }))}
-                            className={`px-2 py-0.5 text-[10px] rounded transition-all ${
+                            className={`px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] rounded transition-all ${
                               gameOptions.timeLimit === opt.value
                                 ? 'bg-tokyo-blue text-tokyo-bg font-bold'
                                 : 'bg-white/5 text-gray-500 hover:bg-white/10'
@@ -398,7 +398,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1004,7 +1004,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                           <button tabIndex={0} className="btn btn-ghost btn-sm text-gray-400">
                             <i className="fa-solid fa-gear"></i>
                           </button>
-                          <div tabIndex={0} className="dropdown-content z-[1] menu p-3 shadow-lg bg-tokyo-bg-dark border border-white/10 rounded-xl w-56 mt-1">
+                          <div tabIndex={0} className="dropdown-content z-[1] menu p-2 sm:p-3 shadow-lg bg-tokyo-bg-dark border border-white/10 rounded-xl sm:w-56 mt-1 w-fit">
                             <div className="flex items-center gap-2 mb-2">
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
@@ -1016,14 +1016,14 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                                 <span className="text-xs text-gray-400">Stop on error</span>
                               </label>
                             </div>
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className="text-xs text-gray-400">Time:</span>
-                              <div className="flex gap-1">
+                              <div className="flex flex-wrap gap-1">
                                 {TIME_OPTIONS.map((opt) => (
                                   <button
                                     key={opt.label}
                                     onClick={() => setGameOptions(prev => ({ ...prev, timeLimit: opt.value }))}
-                                    className={`px-2 py-0.5 text-[10px] rounded transition-all ${
+                                    className={`px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] rounded transition-all ${
                                       gameOptions.timeLimit === opt.value
                                         ? 'bg-tokyo-blue text-tokyo-bg font-bold'
                                         : 'bg-white/5 text-gray-500 hover:bg-white/10'
@@ -1034,7 +1034,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                                 ))}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
