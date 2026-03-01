@@ -21,6 +21,7 @@ export const App = () => {
   const [sequenceIndex, setSequenceIndex] = useState(0);
   const [sequenceResults, setSequenceResults] = useState<SequenceResult[]>([]);
   const [showSequenceSummary, setShowSequenceSummary] = useState(false);
+  const [sequenceOptions, setSequenceOptions] = useState<GameOptions | undefined>();
 
   const handleStartGame = useCallback((code: string, lang: string, options?: GameOptions) => {
     const queryParams = new URLSearchParams();
@@ -32,16 +33,17 @@ export const App = () => {
     navigate(`/game?${queryParams.toString()}`);
   }, [navigate]);
 
-  const handleStartSequence = (selectedSnippets: SavedSnippet[]) => {
+  const handleStartSequence = (selectedSnippets: SavedSnippet[], options?: GameOptions) => {
     if (selectedSnippets.length === 0) return;
     
     const snippetIds = selectedSnippets.map(s => s.id);
     setSequenceQueue(snippetIds);
     setSequenceIndex(0);
     setSequenceResults([]);
+    setSequenceOptions(options);
     
     const firstSnippet = selectedSnippets[0];
-    handleStartGame(firstSnippet.code, firstSnippet.lang);
+    handleStartGame(firstSnippet.code, firstSnippet.lang, options);
   };
 
   const handleSequenceResult = (result: ExerciseResult) => {
@@ -58,7 +60,7 @@ export const App = () => {
       const nextSnippetId = currentQueue[nextIndex];
       const nextSnippet = snippets.find(s => s.id === nextSnippetId);
       if (nextSnippet) {
-        handleStartGame(nextSnippet.code, nextSnippet.lang);
+        handleStartGame(nextSnippet.code, nextSnippet.lang, sequenceOptions);
       }
     } else {
       setShowSequenceSummary(true);

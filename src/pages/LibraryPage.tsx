@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { usePersistenceStore, getLanguageColor, getLanguageName } from '@/stores/persistenceStore';
-import type { SavedSnippet, ExerciseResult } from '@/types';
+import type { SavedSnippet, ExerciseResult, GameOptions } from '@/types';
 
 interface LibraryPageProps {
   onBack: () => void;
-  onStartGame: (code: string, lang: string) => void;
-  onStartSequence?: (snippets: SavedSnippet[]) => void;
+  onStartGame: (code: string, lang: string, options?: GameOptions) => void;
+  onStartSequence?: (snippets: SavedSnippet[], options?: GameOptions) => void;
   isInSequence?: boolean;
   sequenceResults?: SequenceResult[];
   onFinishSequence?: () => void;
@@ -26,6 +26,16 @@ const PREDEFINED_LANGS = [
   { id: 'cpp', label: 'C++' },
   { id: 'java', label: 'Java' },
 ];
+
+const TIME_OPTIONS = [
+  { label: 'None', value: null },
+  { label: '30s', value: 30 },
+  { label: '1m', value: 60 },
+  { label: '2m', value: 120 },
+  { label: '5m', value: 300 },
+];
+
+const REPETITION_OPTIONS = [1, 3, 5, 7, 10];
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
@@ -97,8 +107,15 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
   const [newSnippetCode, setNewSnippetCode] = useState('');
   const [newSnippetLang, setNewSnippetLang] = useState('js');
 
+  const [gameOptions, setGameOptions] = useState<GameOptions>({
+    stopOnError: false,
+    timeLimit: null,
+    practiceMode: false,
+    practiceRepetitions: 5,
+  });
+
   const handlePlay = (snippet: SavedSnippet) => {
-    onStartGame(snippet.code, snippet.lang);
+    onStartGame(snippet.code, snippet.lang, gameOptions);
   };
 
   const handleStartRename = (snippet: SavedSnippet) => {
@@ -173,7 +190,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
       .filter((s): s is SavedSnippet => s !== undefined);
     
     if (sequenceSnippets.length > 0 && onStartSequence) {
-      onStartSequence(sequenceSnippets);
+      onStartSequence(sequenceSnippets, gameOptions);
     }
   };
 
@@ -347,6 +364,70 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   <i className="fa-solid fa-folder mr-1"></i>
                   <span className="hidden sm:inline">Move</span>
                 </button>
+                <div className="dropdown dropdown-end">
+                  <button tabIndex={0} className="btn btn-ghost btn-sm text-gray-400">
+                    <i className="fa-solid fa-gear"></i>
+                  </button>
+                  <div tabIndex={0} className="dropdown-content z-[1] menu p-3 shadow-lg bg-tokyo-bg-dark border border-white/10 rounded-xl w-56 mt-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={gameOptions.stopOnError}
+                          onChange={() => setGameOptions(prev => ({ ...prev, stopOnError: !prev.stopOnError }))}
+                          className="checkbox checkbox-xs checkbox-primary"
+                        />
+                        <span className="text-xs text-gray-400">Stop on error</span>
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-gray-400">Time:</span>
+                      <div className="flex gap-1">
+                        {TIME_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.label}
+                            onClick={() => setGameOptions(prev => ({ ...prev, timeLimit: opt.value }))}
+                            className={`px-2 py-0.5 text-[10px] rounded transition-all ${
+                              gameOptions.timeLimit === opt.value
+                                ? 'bg-tokyo-blue text-tokyo-bg font-bold'
+                                : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={gameOptions.practiceMode}
+                          onChange={() => setGameOptions(prev => ({ ...prev, practiceMode: !prev.practiceMode }))}
+                          className="checkbox checkbox-xs checkbox-primary"
+                        />
+                        <span className="text-xs text-gray-400">Practice</span>
+                      </label>
+                      {gameOptions.practiceMode && (
+                        <div className="flex gap-1">
+                          {REPETITION_OPTIONS.map((num) => (
+                            <button
+                              key={num}
+                              onClick={() => setGameOptions(prev => ({ ...prev, practiceRepetitions: num }))}
+                              className={`w-5 h-5 text-[10px] rounded transition-all ${
+                                gameOptions.practiceRepetitions === num
+                                  ? 'bg-tokyo-magenta text-white font-bold'
+                                  : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                              }`}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <button 
                   onClick={() => handlePlay(currentSnippet)} 
                   className="btn btn-primary btn-sm"
@@ -639,7 +720,7 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                   <button 
                     onClick={() => {
                       const selectedSnippets = snippets.filter(s => selectedForSequence.has(s.id));
-                      onStartSequence(selectedSnippets);
+                      onStartSequence(selectedSnippets, gameOptions);
                     }}
                     className="btn btn-primary btn-sm"
                   >
@@ -919,6 +1000,70 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
                           <i className="fa-solid fa-chart-line mr-1"></i>
                           <span className="hidden sm:inline">Stats</span>
                         </button>
+                        <div className="dropdown dropdown-end">
+                          <button tabIndex={0} className="btn btn-ghost btn-sm text-gray-400">
+                            <i className="fa-solid fa-gear"></i>
+                          </button>
+                          <div tabIndex={0} className="dropdown-content z-[1] menu p-3 shadow-lg bg-tokyo-bg-dark border border-white/10 rounded-xl w-56 mt-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={gameOptions.stopOnError}
+                                  onChange={() => setGameOptions(prev => ({ ...prev, stopOnError: !prev.stopOnError }))}
+                                  className="checkbox checkbox-xs checkbox-primary"
+                                />
+                                <span className="text-xs text-gray-400">Stop on error</span>
+                              </label>
+                            </div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs text-gray-400">Time:</span>
+                              <div className="flex gap-1">
+                                {TIME_OPTIONS.map((opt) => (
+                                  <button
+                                    key={opt.label}
+                                    onClick={() => setGameOptions(prev => ({ ...prev, timeLimit: opt.value }))}
+                                    className={`px-2 py-0.5 text-[10px] rounded transition-all ${
+                                      gameOptions.timeLimit === opt.value
+                                        ? 'bg-tokyo-blue text-tokyo-bg font-bold'
+                                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={gameOptions.practiceMode}
+                                  onChange={() => setGameOptions(prev => ({ ...prev, practiceMode: !prev.practiceMode }))}
+                                  className="checkbox checkbox-xs checkbox-primary"
+                                />
+                                <span className="text-xs text-gray-400">Practice</span>
+                              </label>
+                              {gameOptions.practiceMode && (
+                                <div className="flex gap-1">
+                                  {REPETITION_OPTIONS.map((num) => (
+                                    <button
+                                      key={num}
+                                      onClick={() => setGameOptions(prev => ({ ...prev, practiceRepetitions: num }))}
+                                      className={`w-5 h-5 text-[10px] rounded transition-all ${
+                                        gameOptions.practiceRepetitions === num
+                                          ? 'bg-tokyo-magenta text-white font-bold'
+                                          : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                                      }`}
+                                    >
+                                      {num}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                         <button 
                           onClick={() => handlePlay(snippet)} 
                           className="btn btn-primary btn-sm"
