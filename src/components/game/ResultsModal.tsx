@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { GameStats, ExerciseResult } from '@/types';
 import { getGrade } from '@/lib/grades';
 import { usePersistenceStore } from '@/stores/persistenceStore';
+import { useGameStore } from '@/stores/gameStore';
 
 interface ResultsModalProps {
   stats: GameStats;
@@ -25,6 +26,7 @@ export const ResultsModal = ({ stats, code, lang = 'other', abandoned = false, o
   const hasSavedRef = useRef(false);
   const onFinishCalledRef = useRef(false);
   
+  const errorPositions = useGameStore((state) => state.errorPositions);
   const snippets = usePersistenceStore((state) => state.snippets);
   const addResult = usePersistenceStore((state) => state.addResult);
   const findOrCreateSnippet = usePersistenceStore((state) => state.findOrCreateSnippet);
@@ -42,8 +44,8 @@ export const ResultsModal = ({ stats, code, lang = 'other', abandoned = false, o
       acc: stats.acc,
       time: stats.time,
       errors: stats.errors,
-    });
-  }, [abandoned, matchingSnippet?.id, stats.wpm, stats.acc, stats.time, stats.errors, addResult, findOrCreateSnippet, code, lang]);
+    }, errorPositions);
+  }, [abandoned, matchingSnippet?.id, stats.wpm, stats.acc, stats.time, stats.errors, addResult, findOrCreateSnippet, code, lang, errorPositions]);
 
   const handleBack = () => {
     if (onFinish && !onFinishCalledRef.current) {

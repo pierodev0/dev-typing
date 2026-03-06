@@ -24,6 +24,49 @@ const LANGUAGE_COLORS = [
   'bg-teal-500/20 text-teal-400 border-teal-500/30',
 ];
 
+const SAMPLE_SNIPPET: SavedSnippet = {
+  id: 'sample_snippet_demo',
+  name: 'React useState Hook',
+  code: `import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}`,
+  lang: 'ts',
+  createdAt: '2024-01-15T10:00:00.000Z',
+  results: [
+    { id: 'r1', date: '2024-01-15T10:30:00.000Z', wpm: 45, acc: 92, time: 45, errors: 4 },
+    { id: 'r2', date: '2024-01-16T09:15:00.000Z', wpm: 52, acc: 88, time: 38, errors: 6 },
+    { id: 'r3', date: '2024-01-17T14:20:00.000Z', wpm: 58, acc: 95, time: 35, errors: 2 },
+    { id: 'r4', date: '2024-01-18T11:45:00.000Z', wpm: 63, acc: 91, time: 32, errors: 3 },
+    { id: 'r5', date: '2024-01-19T16:30:00.000Z', wpm: 70, acc: 97, time: 28, errors: 1 },
+  ],
+  errorPositions: {
+    19: 3,
+    20: 2,
+    45: 4,
+    46: 4,
+    47: 3,
+    78: 5,
+    79: 5,
+    80: 4,
+    115: 2,
+    116: 2,
+    117: 1,
+    140: 3,
+    141: 3,
+  },
+};
+
 interface PersistenceStore {
   snippets: SavedSnippet[];
   customLanguages: CustomLanguage[];
@@ -35,7 +78,7 @@ interface PersistenceStore {
   renameSnippet: (id: string, name: string) => void;
   changeSnippetLanguage: (id: string, lang: string) => void;
   deleteSnippet: (id: string) => void;
-  addResult: (snippetId: string, result: Omit<ExerciseResult, 'id' | 'date'>) => void;
+  addResult: (snippetId: string, result: Omit<ExerciseResult, 'id' | 'date'>, errorPositions?: Record<number, number>) => void;
   getSnippet: (id: string) => SavedSnippet | undefined;
   getSnippetByCode: (code: string) => SavedSnippet | undefined;
   clearHistory: (snippetId: string) => void;
@@ -55,7 +98,7 @@ interface PersistenceStore {
 export const usePersistenceStore = create<PersistenceStore>()(
   persist(
     (set, get) => ({
-      snippets: [],
+      snippets: [SAMPLE_SNIPPET],
       customLanguages: [],
       sequences: [],
 
@@ -113,18 +156,32 @@ export const usePersistenceStore = create<PersistenceStore>()(
         }));
       },
 
-      addResult: (snippetId: string, result: Omit<ExerciseResult, 'id' | 'date'>) => {
+      addResult: (snippetId: string, result: Omit<ExerciseResult, 'id' | 'date'>, errorPositions?: Record<number, number>) => {
         const newResult: ExerciseResult = {
           ...result,
           id: `result_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           date: new Date().toISOString(),
         };
         set((state) => ({
-          snippets: state.snippets.map((s) =>
-            s.id === snippetId
-              ? { ...s, results: [...s.results, newResult] }
-              : s
-          ),
+          snippets: state.snippets.map((s) => {
+            if (s.id !== snippetId) return s;
+            
+            const existingErrors = s.errorPositions || {};
+            const newErrors = { ...existingErrors };
+            
+            if (errorPositions) {
+              Object.entries(errorPositions).forEach(([pos, count]) => {
+                const key = parseInt(pos, 10);
+                newErrors[key] = (newErrors[key] || 0) + count;
+              });
+            }
+            
+            return {
+              ...s,
+              results: [...s.results, newResult],
+              errorPositions: newErrors
+            };
+          }),
         }));
       },
 
@@ -139,7 +196,7 @@ export const usePersistenceStore = create<PersistenceStore>()(
       clearHistory: (snippetId: string) => {
         set((state) => ({
           snippets: state.snippets.map((s) =>
-            s.id === snippetId ? { ...s, results: [] } : s
+            s.id === snippetId ? { ...s, results: [], errorPositions: {} } : s
           ),
         }));
       },

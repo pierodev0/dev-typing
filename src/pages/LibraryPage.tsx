@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePersistenceStore, getLanguageColor, getLanguageName } from '@/stores/persistenceStore';
+import { HeatmapCodeView } from '@/components/shared/HeatmapCodeView';
 import type { SavedSnippet, ExerciseResult, GameOptions } from '@/types';
 
 interface LibraryPageProps {
@@ -464,7 +465,10 @@ export const LibraryPage = ({ onBack, onStartGame, onStartSequence }: LibraryPag
             )}
 
             <div className="bg-tokyo-bg-darkest rounded-xl p-4 max-h-48 overflow-auto">
-              <pre className="text-sm text-gray-400 font-mono whitespace-pre-wrap">{currentSnippet.code}</pre>
+              <HeatmapCodeView 
+                code={currentSnippet.code} 
+                errorPositions={currentSnippet.errorPositions} 
+              />
             </div>
           </div>
 

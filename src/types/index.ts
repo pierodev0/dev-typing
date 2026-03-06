@@ -73,6 +73,7 @@ export interface SavedSnippet {
   lang: string;
   createdAt: string;
   results: ExerciseResult[];
+  errorPositions?: Record<number, number>;
 }
 
 export interface CustomLanguage {

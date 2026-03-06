@@ -8,6 +8,7 @@ const processCharacter = (
   options: ReturnType<typeof useGameStore.getState>['options'],
   updateChar: (index: number, updates: Partial<ReturnType<typeof useGameStore.getState>['chars'][0]>) => void,
   incrementErrors: () => void,
+  recordError: (position: number) => void,
   setCursor: (cursor: number) => void,
   triggerShake: () => void,
   onError?: (errorIndex: number) => void,
@@ -32,6 +33,7 @@ const processCharacter = (
     updateChar(cursor, { status: 'incorrect', typed: char });
     if (target.status !== 'incorrect') {
       incrementErrors();
+      recordError(cursor);
     }
     triggerShake();
     
@@ -71,6 +73,7 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
     setCursor, 
     updateChar, 
     incrementErrors,
+    recordError,
     startTimer,
     finishGame,
   } = useGameStore();
@@ -133,9 +136,9 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
 
     e.preventDefault();
 
-    processCharacter(char, cursor, chars, options, updateChar, incrementErrors, setCursor, triggerShake, onError, finishGame);
+    processCharacter(char, cursor, chars, options, updateChar, incrementErrors, recordError, setCursor, triggerShake, onError, finishGame);
     lastCursorRef.current = useGameStore.getState().cursor;
-  }, [chars, cursor, isFinished, stats.started, options, practiceState.isActive, setCursor, updateChar, incrementErrors, startTimer, finishGame, triggerShake, onError]);
+  }, [chars, cursor, isFinished, stats.started, options, practiceState.isActive, setCursor, updateChar, incrementErrors, recordError, startTimer, finishGame, triggerShake, onError]);
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement> | React.FormEvent<HTMLInputElement>) => {
     if (isFinished || practiceState.isActive) return;
@@ -159,13 +162,13 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
 
     const lastChar = input[input.length - 1];
     
-    processCharacter(lastChar, currentCursor, chars, options, updateChar, incrementErrors, setCursor, triggerShake, onError, finishGame);
+    processCharacter(lastChar, currentCursor, chars, options, updateChar, incrementErrors, recordError, setCursor, triggerShake, onError, finishGame);
     lastCursorRef.current = useGameStore.getState().cursor;
     
     if (inputRef.current) {
       inputRef.current.value = '';
     }
-  }, [isFinished, practiceState.isActive, stats.started, chars, options, updateChar, incrementErrors, setCursor, startTimer, triggerShake, onError, finishGame]);
+  }, [isFinished, practiceState.isActive, stats.started, chars, options, updateChar, incrementErrors, recordError, setCursor, startTimer, triggerShake, onError, finishGame]);
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();

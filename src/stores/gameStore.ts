@@ -8,6 +8,7 @@ interface GameStore {
   stats: GameStats;
   isFinished: boolean;
   abandoned: boolean;
+  errorPositions: Record<number, number>;
   code: string;
   lang: string;
   langName: string;
@@ -23,6 +24,8 @@ interface GameStore {
   updateChar: (index: number, updates: Partial<Char>) => void;
   finishGame: (abandoned?: boolean) => void;
   incrementErrors: () => void;
+  recordError: (position: number) => void;
+  getErrorPositions: () => Record<number, number>;
   startTimer: () => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
@@ -64,6 +67,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   stats: initialStats,
   isFinished: false,
   abandoned: false,
+  errorPositions: {},
   code: '',
   lang: '',
   langName: '',
@@ -80,6 +84,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stats: initialStats,
       isFinished: false,
       abandoned: false,
+      errorPositions: {},
       code,
       lang,
       langName: lang === 'auto' ? detectedLang : lang,
@@ -102,6 +107,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stats: initialStats,
       isFinished: false,
       abandoned: false,
+      errorPositions: {},
       langName: lang === 'auto' ? detectedLang : lang,
       startTime: null,
       options,
@@ -156,6 +162,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({
       stats: { ...state.stats, errors: state.stats.errors + 1 },
     })),
+
+  recordError: (position: number) =>
+    set((state) => ({
+      errorPositions: {
+        ...state.errorPositions,
+        [position]: (state.errorPositions[position] || 0) + 1,
+      },
+    })),
+
+  getErrorPositions: () => get().errorPositions,
 
   startTimer: () => {
     set({
