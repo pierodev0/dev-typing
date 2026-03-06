@@ -7,6 +7,7 @@ interface GameStore {
   cursor: number;
   stats: GameStats;
   isFinished: boolean;
+  abandoned: boolean;
   code: string;
   lang: string;
   langName: string;
@@ -20,7 +21,7 @@ interface GameStore {
   setCursor: (cursor: number) => void;
   setStats: (stats: Partial<GameStats>) => void;
   updateChar: (index: number, updates: Partial<Char>) => void;
-  finishGame: () => void;
+  finishGame: (abandoned?: boolean) => void;
   incrementErrors: () => void;
   startTimer: () => void;
   pauseTimer: () => void;
@@ -62,6 +63,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   cursor: 0,
   stats: initialStats,
   isFinished: false,
+  abandoned: false,
   code: '',
   lang: '',
   langName: '',
@@ -77,6 +79,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       cursor: 0,
       stats: initialStats,
       isFinished: false,
+      abandoned: false,
       code,
       lang,
       langName: lang === 'auto' ? detectedLang : lang,
@@ -98,6 +101,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       cursor: 0,
       stats: initialStats,
       isFinished: false,
+      abandoned: false,
       langName: lang === 'auto' ? detectedLang : lang,
       startTime: null,
       options,
@@ -121,7 +125,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return { chars };
     }),
 
-  finishGame: () => {
+  finishGame: (abandoned = false) => {
     const { chars, cursor, startTime, stats, pausedTime } = get();
     const now = Date.now();
     const totalPausedMs = pausedTime || 0;
@@ -138,6 +142,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       isFinished: true,
+      abandoned,
       stats: {
         ...stats,
         wpm: finalWpm,

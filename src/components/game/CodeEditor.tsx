@@ -19,7 +19,7 @@ interface CodeEditorProps {
 }
 
 export const CodeEditor = ({ onBack, onFinish, sequenceButtonText }: CodeEditorProps) => {
-  const { chars, cursor, isFinished, langName, lang, resetGame, finishGame, code } = useGameStore();
+  const { chars, cursor, isFinished, abandoned, langName, lang, resetGame, finishGame, code } = useGameStore();
   
   const {
     practiceState,
@@ -132,6 +132,7 @@ export const CodeEditor = ({ onBack, onFinish, sequenceButtonText }: CodeEditorP
           stats={stats}
           code={code}
           lang={lang}
+          abandoned={abandoned}
           onRetry={handleRetry}
           onBack={onBack}
           onFinish={onFinish}

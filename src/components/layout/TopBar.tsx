@@ -5,7 +5,7 @@ interface TopBarProps {
   acc: number;
   timeRemaining?: number | null;
   onBack: () => void;
-  onFinish: () => void;
+  onFinish: (abandoned?: boolean) => void;
 }
 
 export const TopBar = ({ langName, time, wpm, acc, timeRemaining, onBack, onFinish }: TopBarProps) => {
@@ -44,7 +44,7 @@ export const TopBar = ({ langName, time, wpm, acc, timeRemaining, onBack, onFini
             <div className="font-mono text-xs text-gray-500">{formatTime(time)}</div>
           )}
           <button 
-            onClick={onFinish} 
+            onClick={() => onFinish(true)} 
             className="btn btn-ghost btn-xs text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
           >
             <i className="fa-solid fa-flag-checkered"></i>
@@ -73,7 +73,7 @@ export const TopBar = ({ langName, time, wpm, acc, timeRemaining, onBack, onFini
           <div className="font-mono text-xs text-gray-500">{formatTime(time)}</div>
         )}
         <button 
-          onClick={onFinish} 
+          onClick={() => onFinish(true)} 
           className="btn btn-ghost btn-xs text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
         >
           <i className="fa-solid fa-flag-checkered mr-1"></i> Finish

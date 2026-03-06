@@ -88,7 +88,7 @@ export const useTyping = (onError?: (errorIndex: number) => void) => {
     if (isFinished || practiceState.isActive) return;
 
     if (e.key === 'Escape') {
-      finishGame();
+      finishGame(true);
       return;
     }
 

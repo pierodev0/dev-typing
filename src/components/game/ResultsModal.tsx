@@ -7,6 +7,7 @@ interface ResultsModalProps {
   stats: GameStats;
   code: string;
   lang?: string;
+  abandoned?: boolean;
   onRetry: () => void;
   onBack: () => void;
   onFinish?: (result: ExerciseResult) => void;
@@ -19,7 +20,7 @@ const formatTime = (seconds: number): string => {
   return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 };
 
-export const ResultsModal = ({ stats, code, lang = 'other', onRetry, onBack, onFinish, sequenceButtonText }: ResultsModalProps) => {
+export const ResultsModal = ({ stats, code, lang = 'other', abandoned = false, onRetry, onBack, onFinish, sequenceButtonText }: ResultsModalProps) => {
   const grade = getGrade(stats.wpm, stats.acc);
   const hasSavedRef = useRef(false);
   const onFinishCalledRef = useRef(false);
@@ -31,18 +32,18 @@ export const ResultsModal = ({ stats, code, lang = 'other', onRetry, onBack, onF
   const matchingSnippet = snippets.find(s => s.code === code);
 
   useEffect(() => {
-    if (!hasSavedRef.current) {
-      hasSavedRef.current = true;
-      
-      const snippetId = matchingSnippet?.id || findOrCreateSnippet(code, lang);
-      addResult(snippetId, {
-        wpm: stats.wpm,
-        acc: stats.acc,
-        time: stats.time,
-        errors: stats.errors,
-      });
-    }
-  }, [matchingSnippet?.id, stats.wpm, stats.acc, stats.time, stats.errors, addResult, findOrCreateSnippet, code, lang]);
+    if (abandoned || hasSavedRef.current) return;
+    
+    hasSavedRef.current = true;
+    
+    const snippetId = matchingSnippet?.id || findOrCreateSnippet(code, lang);
+    addResult(snippetId, {
+      wpm: stats.wpm,
+      acc: stats.acc,
+      time: stats.time,
+      errors: stats.errors,
+    });
+  }, [abandoned, matchingSnippet?.id, stats.wpm, stats.acc, stats.time, stats.errors, addResult, findOrCreateSnippet, code, lang]);
 
   const handleBack = () => {
     if (onFinish && !onFinishCalledRef.current) {
@@ -90,7 +91,7 @@ export const ResultsModal = ({ stats, code, lang = 'other', onRetry, onBack, onF
           </div>
         </div>
 
-        {hasSavedRef.current && (
+        {hasSavedRef.current && !abandoned && (
           <div className="mb-4 text-center relative z-10">
             <span className="text-green-400 text-sm">
               <i className="fa-solid fa-check mr-1"></i>
